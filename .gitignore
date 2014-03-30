@@ -1,0 +1,5 @@
+# _obj_ directory if exists contains objects
+/_obj_
+# rrpgeasm or rrpgeasm.exe are the output binaries
+/rrpgeasm
+/rrpgeasm.exe
