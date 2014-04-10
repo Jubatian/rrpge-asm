@@ -267,5 +267,10 @@ There are several things untested in there, however the most important parts
 should be functional.
 
 Some error reports may be quirky, such as currently symbol redefinition is
-only a warning, and prints the entire line with the symbol, and local jump and
+only a warning, and prints the entire line with the symbol; and local jump and
 call (jml, jfl) can not be checked for out of range addresses.
+
+Register in first operand, special in second operand opcode forms are not
+supported such as "mov a, xm" since this case the assembler assumes the second
+operand to be an addressing mode specification (only allowing the eight
+general purpose registers).
