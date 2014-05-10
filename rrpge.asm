@@ -90,6 +90,7 @@ kc_aud_sethnd		equ	0x0210
 kc_vid_setpal		equ	0x0300
 kc_vid_sethnd		equ	0x0310
 kc_vid_getline		equ	0x0320
+kc_vid_mode		equ	0x0330
 kc_inp_getdev		equ	0x0400
 kc_inp_getprops		equ	0x0410
 kc_inp_getdidesc	equ	0x0411
