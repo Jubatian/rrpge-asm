@@ -91,12 +91,12 @@ kc_vid_setpal		equ	0x0300
 kc_vid_sethnd		equ	0x0310
 kc_vid_getline		equ	0x0320
 kc_vid_mode		equ	0x0330
-kc_inp_getdev		equ	0x0400
 kc_inp_getprops		equ	0x0410
-kc_inp_getdidesc	equ	0x0411
-kc_inp_getdi		equ	0x0420
-kc_inp_getai		equ	0x0421
-kc_inp_popchar		equ	0x0423
+kc_inp_dropdev		equ	0x0411
+kc_inp_getdidesc	equ	0x0412
+kc_inp_getdi		equ	0x0422
+kc_inp_getai		equ	0x0423
+kc_inp_popchar		equ	0x0424
 kc_inp_settouch		equ	0x0430
 kc_dly_delay		equ	0x0500
 kc_usr_getlocal		equ	0x0600
