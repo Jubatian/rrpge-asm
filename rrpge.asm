@@ -31,9 +31,8 @@ PTR1D			equ	0b1111
 ; Important memory pages
 ;
 
-PAGE_ROPD		equ	0x40E0
-PAGE_APER		equ	0x7FFF
-PAGE_VPER		equ	0xBFFF
+PAGE_ROPD		equ	0x41C0
+PAGE_UPER		equ	0x7FFF
 
 ;
 ; Important areas in the Read Only Process Descriptor
@@ -86,9 +85,7 @@ kc_sfi_load		equ	0x0110
 kc_sfi_save		equ	0x0111
 kc_sfi_next		equ	0x0112
 kc_sfi_move		equ	0x0113
-kc_aud_sethnd		equ	0x0210
 kc_vid_setpal		equ	0x0300
-kc_vid_sethnd		equ	0x0310
 kc_vid_getline		equ	0x0320
 kc_vid_mode		equ	0x0330
 kc_inp_getprops		equ	0x0410
