@@ -163,7 +163,7 @@ be used:
 - Decimal.
 - Hexadecimal, prefixed by '0x'.
 - Binary, prefixed by '0b'.
-- String, enclosed within '' or "".
+- String, enclosed within '' or "" (single or double quotation marks).
 
 Note that negative numbers and arithmetic is not supported. Hexadecimal
 literals are not case sensitive (both 'A' - 'F' and 'a' - 'f' are accepted).
@@ -174,12 +174,12 @@ characters are only accepted in a 'db'.
 
 Within strings the following special characters are accepted:
 
-- '\t': Horizontal tab (0x09)
-- '\n': New line (0x0A)
-- '\r': Carriage return (0x0D)
-- '\'': Can escape a ' within a '' enclosed string.
-- '\"': Can escape a " within a "" enclosed string.
-- '\\': Escapes a backslash (results one backslash).
+- '\\t': Horizontal tab (0x09)
+- '\\n': New line (0x0A)
+- '\\r': Carriage return (0x0D)
+- '\\'': Can escape a ' within a '' enclosed string.
+- '\\"': Can escape a " within a "" enclosed string.
+- '\\\\': Escapes a backslash (results one backslash).
 
 
 Source includes
@@ -226,8 +226,8 @@ The "rrpge.asm" file
 ------------------------------------------------------------------------------
 
 
-This is an equivalent of a header file containing a set of useful symbols for
-assembly programs.
+This is an equivalent of a (C language) header file containing a set of useful
+symbols for assembly programs.
 
 
 
