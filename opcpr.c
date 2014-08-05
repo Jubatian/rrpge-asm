@@ -632,7 +632,7 @@ static auint opcpr_jops(compst_t* hnd, uint16* crom, auint msk)
 
  /* Check end of string */
 
- beg = strpr_nextnw(src, beg);
+ beg = strpr_nextnw(src, 0U);
  if (!strpr_isend(src[beg])){ goto fault_in4; }
  return 1U;                     /* All OK, encoded */
 
