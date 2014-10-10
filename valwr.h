@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.10.08
 */
 
 
@@ -30,28 +30,19 @@
 #define VALWR_A16  4
 /* Value usage: 4 bit immediate in bit select opcode (BTS, BTC, XBS, XBC) */
 #define VALWR_B4   5
-/* Value usage: 12 bit page immediate used in JML and JFL */
-#define VALWR_J12  6
-/* Value usage: 16 bit page immediate used in JMA and JFA */
-#define VALWR_J16  7
-/* Value usage: 10 bit relative used in JMR */
-#define VALWR_R10  8
+/* Value usage: 16 bit relative used in JMR or JFR. */
+#define VALWR_R16  6
+/* Value usage: 10 bit relative used in JMS */
+#define VALWR_R10  7
 
 /* Where "truncates silently" is noted, out of range values are simply bit
-** masked. Other places if such is necessary warnings are raised. In the case
-** of jumps, errors are raised if the target is out of the possible range of
-** the jump. */
-
-/* Usage is in the application header */
-#define VALWR_APPH 0x10000U
+** masked. Other places if such is necessary warnings are raised. */
 
 
-
-/* Attempts to write out value at a given offset. On 'off' use VALWR_APPH for
-** writing by application header logic. In 'use' supply the form by which to
-** write out. When using the application header the offset is truncated to the
-** low 12 bits, otherwise the low 16 bits. Returns nonzero (TRUE) if some
-** severe failure arises where compilation shouldn't continue. */
+/* Attempts to write out value at a given offset. In 'use' supply the form by
+** which to write out. The offset is truncated to the low 16 bits. Returns
+** nonzero (TRUE) if some severe failure arises where compilation shouldn't
+** continue. */
 auint valwr_write(uint16* dst, uint32 val, auint off, auint use, fault_off_t const* fof);
 
 
