@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.07.01
+**  \date      2014.10.08
 */
 
 
@@ -621,10 +621,8 @@ static auint opcpr_jops(compst_t* hnd, uint16* crom, auint msk)
  beg = strpr_nextnw(src, 0U);
  crom[off] = msk;
 
- /* Note: a bug is left here: the assembler won't note if a page local jump's
- ** target is out of range since this is not visible here. For now jump
- ** targets are not checked at all for this type of error (in valwr the
- ** support for VALWR_J12 and VALWR_J16 is left unused). */
+ /* Note: Currently proper address translation for immediate relative jumps is
+ ** not included (VALWR_R16 would be the way to implement it). */
 
  compst_setcoffrel(hnd, beg);
  if (!opcpr_addr(hnd, crom)){ return 0U; } /* Failed on addressing mode */
@@ -646,7 +644,7 @@ fault_in4:
 
 
 
-/* Encodes relative jump operand. Similar to the other encoders above. */
+/* Encodes short relative jump operand. Similar to the other encoders above. */
 static auint opcpr_rops(compst_t* hnd, uint16* crom, auint msk)
 {
  uint8  s[80];
@@ -754,11 +752,6 @@ auint opcpr_proc(compst_t* hnd, uint16* crom)
   compst_setcoffrel(hnd, beg + 3U);
   return !opcpr_aops(hnd, crom, 0U, 0x4400U);
 
- }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("asl"))){
-
-  compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, OPCPR_CY, 0x2400U);
-
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("asr"))){
 
   compst_setcoffrel(hnd, beg + 3U);
@@ -779,7 +772,7 @@ auint opcpr_proc(compst_t* hnd, uint16* crom)
   compst_setcoffrel(hnd, beg + 3U);
   return !opcpr_aops(hnd, crom, OPCPR_CY, 0x1400U);
 
- }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jfl"))){
+ }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jfr"))){
 
   compst_setcoffrel(hnd, beg + 3U);
   return !opcpr_cops(hnd, crom, 0U, 0x8800U);
@@ -789,7 +782,7 @@ auint opcpr_proc(compst_t* hnd, uint16* crom)
   compst_setcoffrel(hnd, beg + 3U);
   return !opcpr_cops(hnd, crom, 0U, 0x8900U);
 
- }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jml"))){
+ }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jmr"))){
 
   compst_setcoffrel(hnd, beg + 3U);
   return !opcpr_jops(hnd, crom, 0x8C00U);
@@ -799,7 +792,7 @@ auint opcpr_proc(compst_t* hnd, uint16* crom)
   compst_setcoffrel(hnd, beg + 3U);
   return !opcpr_jops(hnd, crom, 0x8D00U);
 
- }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jmr"))){
+ }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jms"))){
 
   compst_setcoffrel(hnd, beg + 3U);
   return !opcpr_rops(hnd, crom, 0x8400U);
@@ -824,10 +817,20 @@ auint opcpr_proc(compst_t* hnd, uint16* crom)
   compst_setcoffrel(hnd, beg + 3U);
   return !opcpr_aops(hnd, crom, OPCPR_CY, 0x2000U);
 
+ }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("neg"))){
+
+  compst_setcoffrel(hnd, beg + 3U);
+  return !opcpr_aops(hnd, crom, 0U, 0x6400U);
+
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("nop"))){
 
   compst_setcoffrel(hnd, beg + 3U);
   return !opcpr_nops(hnd, crom, 0xC000U);
+
+ }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("not"))){
+
+  compst_setcoffrel(hnd, beg + 3U);
+  return !opcpr_aops(hnd, crom, 0U, 0x2400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("or" ))){
 
