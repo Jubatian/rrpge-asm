@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.10.14
 */
 
 
@@ -18,108 +18,25 @@
 
 
 
-/* Internal to check and set occupation on a 32bit unit of the occ. bitmap */
-static auint ps1sup_csocc(compout_t* cd, auint sec, auint off, auint m)
-{
- if       (sec == SECT_CODE){
-  if ((cd->codu[off >> 5] & m) != 0U){ return 1U; }
-  cd->codu[off >> 5] |= m;
- }else if (sec == SECT_CONS){
-  if ((cd->conu[off >> 5] & m) != 0U){ return 1U; }
-  cd->conu[off >> 5] |= m;
- }else{
-  if ((cd->datu[off >> 5] & m) != 0U){ return 1U; }
-  cd->datu[off >> 5] |= m;
- }
- return 0U;
-}
-
-
-
-/* Pushes occpuation data and checks for overlap. The previous offset is
-** supplied, the current is grabbed from the compile state. Returns nonzero
-** (TRUE) if an overlap is detected while reporting an appropriate fault. */
-auint ps1sup_setocc(auint pof, compst_t* hnd, compout_t* cd)
-{
- uint8 s[80];
- uint8 sna[5];
- auint off = compst_getoffw(hnd);
- auint sec = compst_getsect(hnd);
- auint len = off - pof;
- auint m;
- auint ofm;
-
- /* Note: pof might be larger than off, be prepared for this case as well */
-
- if (sec == SECT_CODE){
-  ofm  = 0xFFFFU;
- }else{
-  ofm  = 0x0FFFU;
- }
- off &= ofm;
- pof &= ofm;
- len &= ofm;
-
- if ((off & 0xFFE0U) == (pof & 0xFFE0U)){ /* Within the same 32bit word in the occ. mask */
-  m  =   0xFFFFFFFFU << (pof & 0x1FU);
-  m &= ~(0xFFFFFFFFU << (off & 0x1FU));
-  if (ps1sup_csocc(cd, sec, pof, m)){ goto fault_overlap; }
-  return 0U;
- }
-
- m =   0xFFFFFFFFU << (pof & 0x1FU);
- if (ps1sup_csocc(cd, sec, pof, m)){ goto fault_overlap; }
- m = ~(0xFFFFFFFFU << (off & 0x1FU));
- if (ps1sup_csocc(cd, sec, off, m)){ goto fault_overlap; }
-
- pof >>= 5;
- off >>= 5;
- off = (off - 1U) & ofm;
- m = 0xFFFFFFFFU;
- while (pof != off){
-  if (ps1sup_csocc(cd, sec, off << 5, m)){ pof <<= 5; goto fault_overlap; }
-  off = (off - 1U) & ofm;
- }
- return 0U;
-
-fault_overlap:
-
- if       (sec == SECT_DATA){
-  snprintf((char*)(&sna[0]), 5U, "data");
-  pof |= 0x3000U; /* It is in page 3 */
- }else if (sec == SECT_CODE){
-  snprintf((char*)(&sna[0]), 5U, "code");
- }else{
-  snprintf((char*)(&sna[0]), 5U, "cons");
- }
-
- snprintf((char*)(&s[0]), 80U, "Chunk at %4X of length %d in section \'%s\' overlaps", pof, len, (char*)(&sna[0]));
- fault_printat(FAULT_FAIL, &s[0], hnd);
- return 1U;
-}
-
-
-
 /* Attempts to process the source line as one of the followings:
 ** 'ds', 'db' or 'dw'.
 ** 'org'.
 ** 'section'.
-** In case of 'db' or 'dw', it outputs to the appropriate memory (code ROM or
-** app. header). Provides the following returns:
+** Provides the following returns:
 ** 0: Fault, compilation should stop, fault printed.
 ** 1: Succesfully parsed something.
 ** 2: No content usable, but other parsers may try.
 ** In the case of data allocations, also checks and reports overlaps. Note
 ** that it starts parsing the line at the last set char. position, so this way
 ** labels may be skipped (processed earlier using litpr_symdefproc()). */
-auint ps1sup_parsmisc(compst_t* hnd, compout_t* cd)
+auint ps1sup_parsmisc(compst_t* hnd, section_t* sec)
 {
  uint8        s[80];
  uint8 const* src = compst_getsstrcoff(hnd); /* Might not be first char (Labels!) */
  auint        pof;
- auint        off = compst_getoffw(hnd);
+ auint        sid = section_getsect(sec);
+ auint        off = section_getoffw(sec);
  auint        beg = strpr_nextnw(src, 0U);
- auint        sec = compst_getsect(hnd);
  uint16*      d16;
  auint        u;
  auint        t;
@@ -130,11 +47,6 @@ auint ps1sup_parsmisc(compst_t* hnd, compout_t* cd)
   return 1U;            /* No content on this line, so processed succesful */
  }
 
- if (sec == SECT_CODE){ /* For db and dw, target area */
-  d16 = &(cd->code[0]);
- }else{
-  d16 = &(cd->cons[0]);
- }
 
  /* Check for keywords */
 
@@ -147,10 +59,16 @@ auint ps1sup_parsmisc(compst_t* hnd, compout_t* cd)
 
   if       (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("code"))){
    compst_setsect(hnd, SECT_CODE);
-  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("cons"))){
-   compst_setsect(hnd, SECT_CONS);
   }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("data"))){
    compst_setsect(hnd, SECT_DATA);
+  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("head"))){
+   compst_setsect(hnd, SECT_HEAD);
+  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("desc"))){
+   compst_setsect(hnd, SECT_DESC);
+  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("zero"))){
+   compst_setsect(hnd, SECT_ZERO);
+  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("file"))){
+   compst_setsect(hnd, SECT_FILE);
   }else{
    goto fault_ins;
   }
@@ -169,7 +87,7 @@ auint ps1sup_parsmisc(compst_t* hnd, compout_t* cd)
   if ( (t != LITPR_VAL) || (v > 0xFFFFU) ){
    goto fault_ino;
   }
-  compst_setoffw(hnd, v);
+  section_setoffw(hnd, v);
 
   beg = beg + u;                     /* End of string? */
   if (!strpr_isend(src[beg])){ goto fault_ins; }
@@ -178,31 +96,32 @@ auint ps1sup_parsmisc(compst_t* hnd, compout_t* cd)
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("ds"))){
 
-  /* Reserve data words. Only in data section */
+  /* Reserve data words. Only in ZERO section */
 
-  if (sec != SECT_DATA){ goto fault_dss; }
+  if (sid != SECT_ZERO){ goto fault_dsz; }
 
   beg = strpr_nextnw(src, beg + 2U);
   t = litpr_getval(&(src[beg]), &u, &v, hnd);
-  if ( (t != LITPR_VAL) || (v > 0x0FFFU) ){
+  if ( (t != LITPR_VAL) || (v > 0xFFFFU) ){
    goto fault_ind;
   }
-  compst_setoffw(hnd, off + v);
+  while (v != 0U){
+   if (section_pushw(sec, 0U) != 0U){ goto fault_ovr; }
+   v --;
+  }
 
   beg = beg + u;                     /* End of string? */
   if (!strpr_isend(src[beg])){ goto fault_ind; }
-  return (auint)(!ps1sup_setocc(off, hnd, cd));
+  return 1U;
 
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("db"))){
 
-  /* Insert literal bytes. Only in cons and code sections */
+  /* Insert literal bytes. Only in code, data, head and desc sections */
 
-  if (sec == SECT_DATA){ goto fault_dxs; }
+  if ((sid == SECT_ZERO) || (sid == SECT_FILE)){ goto fault_dxs; }
 
   beg = strpr_nextnw(src, beg + 2U);
-  pof = off; /* For occupation test */
-  off <<= 1; /* Byte offset */
   while(1){
    t = litpr_getval(&(src[beg]), &u, &v, hnd);
 
@@ -211,25 +130,16 @@ auint ps1sup_parsmisc(compst_t* hnd, compout_t* cd)
     t = 0U;
     while (1){
      if (ste[t] == 0U){ break; }
-     if ((off & 1U) == 0U){
-      d16[off >> 1] = (d16[off >> 1] & 0x00FFU) | ((auint)(ste[t]) << 8);
-     }else{
-      d16[off >> 1] = (d16[off >> 1] & 0xFF00U) | ((auint)(ste[t]));
-     }
-     off = compst_incoffb(hnd, 1U);
+     if (section_pushb(sec, ste[t]) != 0U){ goto fault_ovr; }
      t++;
     }
 
    }else if ((t & LITPR_VAL) != 0U){ /* Value */
-    if ((off & 1U) == 0U){
-     d16[off >> 1] = (d16[off >> 1] & 0x00FFU) | ((v & 0xFFU) << 8);
-    }else{
-     d16[off >> 1] = (d16[off >> 1] & 0xFF00U) | ((v & 0xFFU));
-    }
-    off = compst_incoffb(hnd, 1U);
+    if (section_pushb(sec, v) != 0U){ goto fault_ovr; }
 
    }else if (t == LITPR_UND){        /* Undefined symbol - pass2 should do it */
-    if (sec == SECT_CONS){
+    /* !!! Needs to be modified !!! */
+    if (sid == SECT_CONS){
      t = (off >> 1) | VALWR_APPH;
     }else{
      t = (off >> 1);
@@ -253,26 +163,25 @@ auint ps1sup_parsmisc(compst_t* hnd, compout_t* cd)
   }
 
   /* Note: No need to check string end here since it is done above */
-  return (auint)(!ps1sup_setocc(pof, hnd, cd));
+  return 1U;
 
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("dw"))){
 
-  /* Insert literal words. Only in cons and code sections */
+  /* Insert literal words. Only in code, data, head and desc sections */
 
-  if (sec == SECT_DATA){ goto fault_dxs; }
+  if ((sid == SECT_ZERO) || (sid == SECT_FILE)){ goto fault_dxs; }
 
   beg = strpr_nextnw(src, beg + 2U);
-  pof = off; /* For occupation test */
   while(1){
    t = litpr_getval(&(src[beg]), &u, &v, hnd);
 
    if ((t & LITPR_VAL) != 0U){       /* Value */
-    d16[off] = v & 0xFFFFU;
-    off = compst_incoffw(hnd, 1U);
+    if (section_pushw(sec, v) != 0U){ goto fault_ovr; }
 
    }else if (t == LITPR_UND){        /* Undefined symbol - pass2 should do it */
-    if (sec == SECT_CONS){
+    /* !!! Needs to be modified !!! */
+    if (sid == SECT_CONS){
      t = off | VALWR_APPH;
     }else{
      t = off;
@@ -292,7 +201,7 @@ auint ps1sup_parsmisc(compst_t* hnd, compout_t* cd)
   }
 
   /* Note: No need to check string end here since it is done above */
-  return (auint)(!ps1sup_setocc(pof, hnd, cd));
+  return 1U;
 
 
  }else{
@@ -316,10 +225,10 @@ fault_ino:
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
 
-fault_dss:
+fault_dsz:
 
  compst_setcoffrel(hnd, beg);
- snprintf((char*)(&s[0]), 80U, "\'ds\' is only allowed in data section");
+ snprintf((char*)(&s[0]), 80U, "\'ds\' is only allowed in zero section");
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
 
@@ -333,7 +242,7 @@ fault_ind:
 fault_dxs:
 
  compst_setcoffrel(hnd, beg);
- snprintf((char*)(&s[0]), 80U, "\'db\' or \'dw\' is only allowed in code or cons section");
+ snprintf((char*)(&s[0]), 80U, "\'db\' or \'dw\' is only allowed in code, data, head or desc");
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
 
@@ -344,4 +253,10 @@ fault_inx:
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
 
+fault_ovr:
+
+ compst_setcoffrel(hnd, beg);
+ snprintf((char*)(&s[0]), 80U, "Overlap or out of section encountered");
+ fault_printat(FAULT_FAIL, &s[0], hnd);
+ return 0U;
 }
