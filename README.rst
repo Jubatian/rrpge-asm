@@ -71,8 +71,8 @@ Labels and symbols
 The assembler has a single unified symbol concept. Symbols can be defined in
 two ways:
 
-- Labels: They symbol will get the value of the current 16 bit offset within
-  the section.
+- Labels: They symbol will get the value of the current offset within the
+  section. Section base offsets are handled appropriately during this pass.
 
 - Equs: The symbol will get the value specified in the equation.
 
@@ -98,25 +98,28 @@ the last encountered global symbol definition.
 Sections and offsets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Three sections are understood by the assembler:
+Six sections are understood by the assembler:
 
-- code: Refers to the code memory, up to 64 KWords.
-- cons: Refers to the application header, up to 4 KWords.
-- data: Refers to page 3 in the CPU's address space, up to 4 KWords.
-
-The code and cons sections are compiled into the application binary as
-appropriate. The data section can not hold any initialization values, by the
-definition of the RRPGE system however this area is initialized to zero.
+- code: The code memory, up to 64 KWords.
+- data: Initialized data, up to about 62 KWords.
+- head: Application header, up to 64 KWords.
+- desc: Application descriptor, up to 20 Words.
+- zero: Zero data, up to about 62 KWords (shared with data).
+- file: Application binary for loading additional data.
 
 The section to use can be specified by the following syntax: ::
 
     section code
-    section cons
     section data
+    section head
+    section desc
+    section zero
+    section file
 
 Opcodes can only be placed into the code section. Data ('dw' and 'db'
-keywords) can be defined in both the code and cons sections. In the data
-section only space may be reserved for variables (using the 'ds' keyword).
+keywords) can be defined in all of the code, data, head and desc sections. In
+the zero section only space may be reserved for variables (using the 'ds'
+keyword).
 
 Initially (before explicitly specifying any section) the code section is
 selected.
@@ -130,12 +133,17 @@ These offsets may be set explicitly using the 'org' keyword: ::
 
 This sets the offset for the currently selected section.
 
+In the application binary the sections are laid out in the following order:
+head, desc, code, data, file. Section base offsets (notably for zero and file)
+are calculated after the first pass, knowing the sizes of the sections, so the
+second pass may rely on the calculated offsets referred by labels.
+
 
 Data definition and allocation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Within the code and cons sections literal data may be defined using the 'dw'
-and 'db' keywords, such as: ::
+Within the head, desc, code and data sections literal data may be defined
+using the 'dw' and 'db' keywords, such as: ::
 
     dw 0x0001, 2, 3, 0b0101010110101010
 
@@ -203,22 +211,11 @@ Binary includes
 Binary files may be included using the 'bindata' keyword. The syntax is as
 follows: ::
 
-    bindata "data.bin" page, offset
+    bindata "data.bin"
 
-The offset may be omitted which case it will be evaluated to zero.
-
-The page specifies the binary data page where the inclusion should start. Data
-spanning multiple pages is supported. Note that page numbering starts with 0
-with the first binary data page (so not including the Application Header and
-the Code pages after it).
-
-The page may be set to 'h' to request inclusion within the Application Header
-as follows: ::
-
-    bindata "data.bin" h, offset
-
-This case the data must fit within the Application Header.
-
+The binary data is then included as-is into the section currently selected.
+Labels should be used to mark the beginning, and if needed, the end of a data
+element.
 
 
 
