@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.13
+**  \date      2014.10.14
 **
 **  Manages the sections and their data during the compilation. Currently
 **  singleton, but desinged so it is possible to extend later.
@@ -62,6 +62,14 @@ auint section_getsect(section_t* hnd);
 
 /* Sets offset within section, word granularity. */
 void  section_setoffw(section_t* hnd, auint off);
+
+
+/* Gets word offset for a subsequent use with section_setw(). */
+auint section_getoffw(section_t* hnd);
+
+
+/* Gets byte offset for a subsequent use with section_setb(). */
+auint section_getoffb(section_t* hnd);
 
 
 /* Pushes word data to the section. If necessary, aligns offset to word

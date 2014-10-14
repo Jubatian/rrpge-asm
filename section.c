@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.13
+**  \date      2014.10.14
 **
 **  Manages the sections and their data during the compilation. Currently
 **  singleton, but desinged so it is possible to extend later.
@@ -144,6 +144,22 @@ void  section_setoffw(section_t* hnd, auint off)
 {
  hnd->p[hnd->s] = off;
  hnd->b[hnd->s] = 0U;
+}
+
+
+
+/* Gets word offset for a subsequent use with section_setw(). */
+auint section_getoffw(section_t* hnd)
+{
+ return (hnd->p[hnd->s]); /* Byte offset simply ignored */
+}
+
+
+
+/* Gets byte offset for a subsequent use with section_setb(). */
+auint section_getoffb(section_t* hnd)
+{
+ return (((hnd->p[hnd->s]) << 1) + (hnd->b[hnd->s]));
 }
 
 
