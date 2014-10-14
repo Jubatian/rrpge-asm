@@ -89,28 +89,10 @@ auint valwr_write(section_t* dst, uint32 val, auint off, auint use, fault_off_t 
 }
 
 
-/* !! Will be removed */
 
-
-/* Like valwr_writeoff(), but uses the current compile state for offset &
-** outputting fault messages. Works with word offsets (will pad to word
-** boundary when use), but otherwise it does not alter the offset. */
-auint valwr_writeat(uint16* dst, uint32 val, auint use, compst_t* cof)
-{
- uint8       fil[FILE_MAX];
- fault_off_t fof;
- auint       off = compst_getoffw(cof);
-
- fault_fofget(&fof, cof, &fil[0]);
- return valwr_write(dst, val, off, use, &fof);
-}
-
-
-
-/* Like valwr_writeoff(), but uses the current compile state for outputting
-** fault messages, but not the offset. This way an earlier offset from the
-** compile state may be supplied if necessary. */
-auint valwr_writeatoff(uint16* dst, uint32 val, auint off, auint use, compst_t* cof)
+/* Like valwr_write(), but uses the current compile state for outputting
+** fault messages. */
+auint valwr_writecs(section_t* dst, uint32 val, auint off, auint use, compst_t* cof)
 {
  uint8       fil[FILE_MAX];
  fault_off_t fof;

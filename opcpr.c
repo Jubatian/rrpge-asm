@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.08
+**  \date      2014.10.14
 */
 
 
@@ -149,16 +149,16 @@ static auint opcpr_x4(uint8 const* src, auint beg, auint* enc)
 
 /* Processes immediate for addressing mode. Returns 0 if the source line is
 ** improperly formatted for it, otherwise will return the size of the literal
-** or symbol. Encodes the immediate into the code rom as appropriate, also
+** or symbol. Encodes the immediate into the setion as appropriate, also
 ** setting up for pass2 if necessary. Sets offset according to the number of
-** words output. Formats address according to immediate mode. The last
-** parameter if nonzero forces long immediate coding. Outputs failure
-** informations. */
-static auint opcpr_addrimm(compst_t* hnd, uint16* crom, auint lng)
+** words output: Assumes first word already pushed, adds second word if
+** necessary. Formats address according to immediate mode. The last parameter
+** if nonzero forces long immediate coding. Outputs failure informations. */
+static auint opcpr_addrimm(compst_t* hnd, section_t* sec, auint lng)
 {
  uint8  s[80];
  uint8 const* src = compst_getsstrcoff(hnd);
- auint  off = compst_getoffw(hnd);
+ auint  off = section_getoffw(sec) - 1U;
  auint  t;
  auint  u;
  uint32 v;
@@ -167,21 +167,18 @@ static auint opcpr_addrimm(compst_t* hnd, uint16* crom, auint lng)
  if ((t == LITPR_INV) || (t == LITPR_STR)){ goto fault_lii; }
  if (t == LITPR_UND){           /* Symbol, undefined */
   pass2_addsymuse(&(src[0]), off, VALWR_A16, hnd);
-  crom[off] |= 0x0020U;         /* For indicating large imm. */
-  off = compst_incoffw(hnd, 1U);
-  crom[off] |= 0xC000U;         /* Make it a NOP */
+  section_setw(sec, off, 0x0020U); /* Large immediate */
+  if (section_pushw(sec, 0xC000U) != 0U){ goto fault_ps0; } /* Prepare second NOP word */
  }else{                         /* Defined symbol, value extracted */
   v&= 0xFFFFU;
   if ((v < 16U) && (!lng)){     /* Small immediate */
-   if (valwr_writeat(crom, v,  VALWR_A4, hnd)){ return 0U; }
+   if (valwr_writecs(sec, v, off, VALWR_A4, hnd)){ return 0U; }
   }else{                        /* Large immediate */
-   if (valwr_writeat(crom, v, VALWR_A16, hnd)){ return 0U; }
-   crom[off] |= 0x0020U;        /* For indicating large imm. */
-   off = compst_incoffw(hnd, 1U);
-   crom[off] |= 0xC000U;        /* Make it a NOP */
+   section_setw(sec, off, 0x0020U); /* Large immediate */
+   if (section_pushw(sec, 0xC000U) != 0U){ goto fault_ps0; } /* Prepare second NOP word */
+   if (valwr_writecs(sec, v, off, VALWR_A16, hnd)){ return 0U; }
   }
  }
- off = compst_incoffw(hnd, 1U);
  return u;
 
  /* Encoding faults */
@@ -191,42 +188,54 @@ fault_lii:
  snprintf((char*)(&s[0]), 80U, "Invalid literal in addressing mode");
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
+
+fault_ps0:
+
+ snprintf((char*)(&s[0]), 80U, "No space for second word of immediate");
+ fault_printat(FAULT_FAIL, &s[0], hnd);
+ return 0U;
 }
 
 
 
-/* Decodes addressing mode and outputs it into the passed code memory. It only
-** alters the addressing mode bits of the first opcode word (so it can be set
-** up beforehands), and will encode the second as a NOP if necessary. Works
+/* Decodes addressing mode and outputs it into the passed section. It only
+** alters the addressing mode bits of the first opcode word (must be pushed
+** beforehands), and will encode the second as a NOP if necessary. Works
 ** around symbols if necessary, appropriately. May emit fault. Character
 ** position within the source line is updated. Returns nonzero (TRUE) on
 ** success. */
-static auint opcpr_addr(compst_t* hnd, uint16* crom)
+static auint opcpr_addr(compst_t* hnd, section_t* sec)
 {
  uint8  s[80];
  uint8 const* src = compst_getsstrcoff(hnd);
- auint  off = compst_getoffw(hnd);
+ auint  off = section_getoffw(sec) - 1U;
  auint  beg;
  auint  i;
  auint  e;
 
  beg = strpr_nextnw(src, 0U);
 
- /* Remove any bits in the address area */
-
- crom[off] = crom[off] & 0xFFC0U;
-
  /* Register or immediate modes */
 
  if (src[beg] != (uint8)('[')){ /* Not memory: register or immediate */
   i = opcpr_rx(src, beg, &e);
   if (i != 0U){                 /* Register mode */
-   crom[off] |= 0x0030U | e;
-   off = compst_incoffw(hnd, 1U);
+   section_setw(sec, off, 0x0030U | e);
    beg = i;
   }else{                        /* Immediate mode */
-   src = compst_setcoffrel(hnd, beg);
-   i = opcpr_addrimm(hnd, crom, 0U);
+   i = opcpr_bp(src, beg);
+   if (i != 0U){                /* BP register found: BP relative immediate */
+    beg = strpr_nextnw(src, i);
+    if (src[beg] != (uint8)('+')){ goto fault_stk; }
+    beg++;
+    beg = strpr_nextnw(src, beg);
+    section_setw(sec, off, 0x0004U | e);
+    src = compst_setcoffrel(hnd, beg);
+    i = opcpr_addrimm(hnd, sec, 1U);
+   }else{
+    src = compst_setcoffrel(hnd, beg);
+    i = opcpr_addrimm(hnd, sec, 0U);
+   }
    if (i == 0U){ goto fault_ot0; }
    beg = i;
    if (src[beg] == (uint8)(']')){ goto fault_in0; }
@@ -249,19 +258,18 @@ static auint opcpr_addr(compst_t* hnd, uint16* crom)
    beg = strpr_nextnw(src, i);
    if (src[beg] != (uint8)(']')){ goto fault_par; }
    beg++;
-   crom[off] |= 0x003CU | e;
-   off = compst_incoffw(hnd, 1U);
+   section_setw(sec, off, 0x003CU | e);
   }else{                        /* Immediate mode */
    src = compst_setcoffrel(hnd, beg);
-   i = opcpr_addrimm(hnd, crom, 0U);
+   i = opcpr_addrimm(hnd, sec, 0U);
    if (i == 0U){ goto fault_ot0; }
    beg = i;
    if (src[beg] != (uint8)(']')){ goto fault_par; }
    beg++;
-   if ((crom[off] & 0x0030U) == 0U){
-    crom[off] |= 0x0010U;       /* Fix up for stack addressing, imm4 */
+   if (off == (section_getoffw(sec) - 1U)){
+    section_setw(sec, off, 0x0010U); /* Fix up for stack addressing, imm4 */
    }else{
-    crom[off] |= 0x000CU;       /* Fix up for stack addressing, imm16 */
+    section_setw(sec, off, 0x000CU); /* Fix up for stack addressing, imm16 */
    }
   }
   compst_setcoffrel(hnd, beg);
@@ -276,16 +284,15 @@ static auint opcpr_addr(compst_t* hnd, uint16* crom)
   beg = strpr_nextnw(src, i);
   if (src[beg] != (uint8)(']')){ goto fault_par; }
   beg++;
-  crom[off] |= 0x0038U | e;
-  off = compst_incoffw(hnd, 1U);
+  section_setw(sec, off, 0x0038U | e);
  }else{                         /* Immediate mode */
   src = compst_setcoffrel(hnd, beg);
-  i = opcpr_addrimm(hnd, crom, 1U);
+  i = opcpr_addrimm(hnd, sec, 1U);
   if (i == 0U){ goto fault_ot0; }
   beg = i;
   if (src[beg] != (uint8)(']')){ goto fault_par; }
   beg++;
-  crom[off] |= 0x0008U;         /* Fix up for data addressing */
+  section_setw(sec, off, 0x0008U); /* Fix up for data addressing */
  }
  compst_setcoffrel(hnd, beg);
  return 1U;
@@ -336,8 +343,8 @@ fault_ot0:
 
 /* Encodes register operand with specials. Returns new string offset if
 ** anything was encoded, zero otherwise. Encodes into the area passed by a
-** code ROM pointer. */
-static auint opcpr_aops_rx(uint8 const* src, auint beg, auint msp, uint16* cptr)
+** pointer. */
+static auint opcpr_aops_rx(uint8 const* src, auint beg, auint msp, auint* cptr)
 {
  auint  i;
  auint  e;
@@ -390,16 +397,17 @@ static auint opcpr_aops_rx(uint8 const* src, auint beg, auint msp, uint16* cptr)
 ** opcode word which can be used to form the opcode (allowing for using this
 ** routine properly with special operands). Returns 0 (FALSE) if failed,
 ** nonzero (TRUE) if not. The string is required to end here. */
-static auint opcpr_aops(compst_t* hnd, uint16* crom, auint msp, auint msk)
+static auint opcpr_aops(compst_t* hnd, section_t* sec, auint msp, auint msk)
 {
  uint8  s[80];
  uint8 const* src = compst_getsstrcoff(hnd);
- auint  off = compst_getoffw(hnd);
+ auint  off = section_getoffw(sec);
  auint  beg;
  auint  i;
+ auint  v = 0U;
 
  beg = strpr_nextnw(src, 0U);
- crom[off] = msk;
+ if (section_pushw(sec, msk) != 0U){ goto fault_ps1; }
 
  /* Check for "c:" operand mode */
 
@@ -407,21 +415,22 @@ static auint opcpr_aops(compst_t* hnd, uint16* crom, auint msp, auint msk)
   i = strpr_nextnw(src, beg + 1U);
   if (src[i] == (uint8)(':')){  /* This makes it a carry operand mode */
    if ((msp & OPCPR_CY) == 0U){ goto fault_ncy; }
-   crom[off] |= 0x4000U;        /* Carry operand mode */
+   section_setw(sec, off, 0x4000U); /* Carry operand mode */
    beg = strpr_nextnw(src, i + 1U);
   }
  }
 
  /* Check for register operand */
 
- i = opcpr_aops_rx(src, beg, msp & (~OPCPR_SR), &(crom[off]));
+ i = opcpr_aops_rx(src, beg, msp & (~OPCPR_SR), &v);
+ section_setw(sec, off, v);
  if (i != 0U){                  /* Register is assumed first */
-  crom[off] |= 0x0200U;         /* Encoding of reg. first */
+  section_setw(sec, off, 0x0200U);  /* Encoding of reg. first */
   beg = strpr_nextnw(src, i);
   if (src[beg] != (uint8)(',')){ goto fault_com; }
   beg++;
   compst_setcoffrel(hnd, beg);
-  if (!opcpr_addr(hnd, crom)){ return 0U; } /* Failed on addressing mode */
+  if (!opcpr_addr(hnd, sec)){ return 0U; } /* Failed on addressing mode */
   src = compst_getsstrcoff(hnd);
   beg = strpr_nextnw(src, 0U);
   if (!strpr_isend(src[beg])){ goto fault_in1; }
@@ -432,12 +441,13 @@ static auint opcpr_aops(compst_t* hnd, uint16* crom, auint msp, auint msk)
  /* Check for addressing mode (it should come first then) */
 
  compst_setcoffrel(hnd, beg);
- if (!opcpr_addr(hnd, crom)){ return 0U; } /* Failed on addressing mode */
+ if (!opcpr_addr(hnd, sec)){ return 0U; } /* Failed on addressing mode */
  src = compst_getsstrcoff(hnd);
  beg = strpr_nextnw(src, 0U);
  if (src[beg] != (uint8)(',')){ goto fault_com; }
  beg++;
- i = opcpr_aops_rx(src, beg, msp & (~OPCPR_SW), &(crom[off]));
+ i = opcpr_aops_rx(src, beg, msp & (~OPCPR_SW), &v);
+ section_setw(sec, off, v);
  if (i == 0U){ goto fault_in1; }
  beg = strpr_nextnw(src, i);
  if (!strpr_isend(src[beg])){ goto fault_in1; }
@@ -466,6 +476,13 @@ fault_in1:
  snprintf((char*)(&s[0]), 80U, "Invalid operand format (arithmetic)");
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
+
+fault_ps1:
+
+ compst_setcoffrel(hnd, beg);
+ snprintf((char*)(&s[0]), 80U, "No space for opcode");
+ fault_printat(FAULT_FAIL, &s[0], hnd);
+ return 0U;
 }
 
 
@@ -473,23 +490,23 @@ fault_in1:
 /* Encodes bit operations. Here the address format is adr, imm4, encoding
 ** differently to normal arithmetic. Works similar to opcpr_aops(), except
 ** this has no special addressing modes. */
-static auint opcpr_bops(compst_t* hnd, uint16* crom, auint msk)
+static auint opcpr_bops(compst_t* hnd, section_t* sec, auint msk)
 {
  uint8  s[80];
  uint8 const* src = compst_getsstrcoff(hnd);
- auint  off = compst_getoffw(hnd);
+ auint  off = section_getoffw(sec);
  auint  beg;
  auint  t;
  auint  u;
  uint32 v;
 
  beg = strpr_nextnw(src, 0U);
- crom[off] = msk;
+ if (section_pushw(sec, msk) != 0U){ goto fault_ps2; }
 
  /* Check & encode addressing mode (increments code offset) */
 
  compst_setcoffrel(hnd, beg);
- if (!opcpr_addr(hnd, crom)){ return 0U; } /* Failed on addressing mode */
+ if (!opcpr_addr(hnd, sec)){ return 0U; } /* Failed on addressing mode */
  src = compst_getsstrcoff(hnd);
  beg = strpr_nextnw(src, 0U);
  if (src[beg] != (uint8)(',')){ goto fault_cm2; }
@@ -505,7 +522,7 @@ static auint opcpr_bops(compst_t* hnd, uint16* crom, auint msk)
  }else{                         /* Defined symbol, value extracted */
   src = compst_setcoffrel(hnd, beg);
   beg = 0U;
-  if (valwr_writeatoff(crom, v, off, VALWR_B4, hnd)){ return 0U; }
+  if (valwr_writecs(sec, v, off, VALWR_B4, hnd)){ return 0U; }
  }
 
  /* Check end of string */
@@ -527,6 +544,13 @@ fault_in2:
  snprintf((char*)(&s[0]), 80U, "Invalid operand format (bit)");
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
+
+fault_ps2:
+
+ compst_setcoffrel(hnd, beg);
+ snprintf((char*)(&s[0]), 80U, "No space for opcode");
+ fault_printat(FAULT_FAIL, &s[0], hnd);
+ return 0U;
 }
 
 
@@ -534,33 +558,26 @@ fault_in2:
 /* Encodes functions. Similar to the other encoders above. It properly goes
 ** through the parameter list. The 'sv' parameter if true indicates this is
 ** for a supervisor call, so there is no call address. */
-static auint opcpr_cops(compst_t* hnd, uint16* crom, auint sv, auint msk)
+static auint opcpr_cops(compst_t* hnd, section_t* sec, auint sv, auint msk)
 {
  uint8  s[80];
  uint8 const* src = compst_getsstrcoff(hnd);
- auint  off = compst_getoffw(hnd);
+ auint  off = section_getoffw(sec);
  auint  beg;
  auint  pof = off;
 
  beg = strpr_nextnw(src, 0U);
- crom[off] = msk;
-
- /* Note: a bug is left here: the assembler won't note if a page local jump's
- ** target is out of range since this is not visible here. For now jump
- ** targets are not checked at all for this type of error (in valwr the
- ** support for VALWR_J12 and VALWR_J16 is left unused). */
+ if (section_pushw(sec, msk) != 0U){ goto fault_ps3; }
 
  /* If it is not a supervisor call, encode call target */
 
  if (!sv){
   compst_setcoffrel(hnd, beg);
-  if (!opcpr_addr(hnd, crom)){ return 0U; } /* Failed on addressing mode */
+  if (!opcpr_addr(hnd, sec)){ return 0U; } /* Failed on addressing mode */
   src = compst_getsstrcoff(hnd);
   beg = strpr_nextnw(src, 0U);
-  off = compst_getoffw(hnd);
- }else{
-  off = compst_incoffw(hnd, 1U);
  }
+ off = section_getoffw(sec);
 
  /* From here encode parameters, as many as comes. Empty {} is also allowed */
 
@@ -569,12 +586,12 @@ static auint opcpr_cops(compst_t* hnd, uint16* crom, auint sv, auint msk)
   if (src[beg] != (uint8)('}')){
    while (1){
     pof = off;
-    crom[off] = 0xC000U;        /* Parameters should form as NOPs */
+    if (section_pushw(sec, 0xC000U) != 0U){ goto fault_ps3; } /* Parameters should form as NOPs */
     compst_setcoffrel(hnd, beg);
-    if (!opcpr_addr(hnd, crom)){ return 0U; } /* Failed on addressing mode */
+    if (!opcpr_addr(hnd, sec)){ return 0U; } /* Failed on addressing mode */
     src = compst_getsstrcoff(hnd);
     beg = strpr_nextnw(src, 0U);
-    off = compst_getoffw(hnd);
+    off = section_getoffw(sec);
     if (src[beg] != (uint8)(',')){
      if (src[beg] == (uint8)('}')){ break; }
      goto fault_cmb;
@@ -585,7 +602,7 @@ static auint opcpr_cops(compst_t* hnd, uint16* crom, auint sv, auint msk)
   }
   beg++;
  }
- crom[pof] |= 0x0040U;          /* Terminate parameter list */
+ section_setw(sec, off, 0x0040U); /* Terminate parameter list */
 
  /* Check end of string */
 
@@ -606,26 +623,33 @@ fault_in3:
  snprintf((char*)(&s[0]), 80U, "Invalid operand format (function)");
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
+
+fault_ps3:
+
+ compst_setcoffrel(hnd, beg);
+ snprintf((char*)(&s[0]), 80U, "No space for opcode");
+ fault_printat(FAULT_FAIL, &s[0], hnd);
+ return 0U;
 }
 
 
 
 /* Encodes jump operands. Similar to the other encoders above. */
-static auint opcpr_jops(compst_t* hnd, uint16* crom, auint msk)
+static auint opcpr_jops(compst_t* hnd, section_t* sec, auint msk)
 {
  uint8  s[80];
  uint8 const* src = compst_getsstrcoff(hnd);
- auint  off = compst_getoffw(hnd);
+ auint  off = section_getoffw(sec);
  auint  beg;
 
  beg = strpr_nextnw(src, 0U);
- crom[off] = msk;
+ if (section_pushw(sec, msk) != 0U){ goto fault_ps4; }
 
  /* Note: Currently proper address translation for immediate relative jumps is
  ** not included (VALWR_R16 would be the way to implement it). */
 
  compst_setcoffrel(hnd, beg);
- if (!opcpr_addr(hnd, crom)){ return 0U; } /* Failed on addressing mode */
+ if (!opcpr_addr(hnd, sec)){ return 0U; } /* Failed on addressing mode */
  src = compst_getsstrcoff(hnd);
 
  /* Check end of string */
@@ -640,23 +664,30 @@ fault_in4:
  snprintf((char*)(&s[0]), 80U, "Invalid operand format (jump)");
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
+
+fault_ps4:
+
+ compst_setcoffrel(hnd, beg);
+ snprintf((char*)(&s[0]), 80U, "No space for opcode");
+ fault_printat(FAULT_FAIL, &s[0], hnd);
+ return 0U;
 }
 
 
 
 /* Encodes short relative jump operand. Similar to the other encoders above. */
-static auint opcpr_rops(compst_t* hnd, uint16* crom, auint msk)
+static auint opcpr_rops(compst_t* hnd, section_t* sec, auint msk)
 {
  uint8  s[80];
  uint8 const* src = compst_getsstrcoff(hnd);
- auint  off = compst_getoffw(hnd);
+ auint  off = section_getoffw(sec);
  auint  beg;
  auint  t;
  auint  u;
  uint32 v;
 
  beg = strpr_nextnw(src, 0U);
- crom[off] = msk;
+ if (section_pushw(sec, msk) != 0U){ goto fault_ps5; }
 
  t = litpr_getval(&(src[beg]), &u, &v, hnd);
  if ((t == LITPR_INV) || (t == LITPR_STR)){ goto fault_in5; }
@@ -665,9 +696,8 @@ static auint opcpr_rops(compst_t* hnd, uint16* crom, auint msk)
  }else{                         /* Defined symbol, value extracted */
   src = compst_setcoffrel(hnd, beg);
   beg = 0U;
-  if (valwr_writeat(crom, v, VALWR_R10, hnd)){ return 0U; }
+  if (valwr_writecs(sec, v, off, VALWR_R10, hnd)){ return 0U; }
  }
- off = compst_incoffw(hnd, 1U);
 
  /* Check end of string */
 
@@ -681,21 +711,27 @@ fault_in5:
  snprintf((char*)(&s[0]), 80U, "Invalid operand format (relative jump)");
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
+
+fault_ps5:
+
+ compst_setcoffrel(hnd, beg);
+ snprintf((char*)(&s[0]), 80U, "No space for opcode");
+ fault_printat(FAULT_FAIL, &s[0], hnd);
+ return 0U;
 }
 
 
 
 /* Encodes nop. Similar to the other encoders above. */
-static auint opcpr_nops(compst_t* hnd, uint16* crom, auint msk)
+static auint opcpr_nops(compst_t* hnd, section_t* sec, auint msk)
 {
  uint8  s[80];
  uint8 const* src = compst_getsstrcoff(hnd);
- auint  off = compst_getoffw(hnd);
+ auint  off = section_getoffw(sec);
  auint  beg;
 
  beg = strpr_nextnw(src, 0U);
- crom[off] = msk;
- off = compst_incoffw(hnd, 1U);
+ if (section_pushw(sec, msk) != 0U){ goto fault_ps6; }
 
  /* Check end of string */
 
@@ -708,24 +744,31 @@ fault_in6:
  snprintf((char*)(&s[0]), 80U, "Invalid operand format (nop)");
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
+
+fault_ps6:
+
+ compst_setcoffrel(hnd, beg);
+ snprintf((char*)(&s[0]), 80U, "No space for opcode");
+ fault_printat(FAULT_FAIL, &s[0], hnd);
+ return 0U;
 }
 
 
 
 /* Attempts to process an opcode beginning at the current position in the
-** source line of the compile state. It uses the offset in the compilation
-** state to write into the passed code memory block, and increments the offset
+** source line of the compile state. It uses the offset in the current section
+** to write into the passed code memory block, and increments the offset
 ** afterwards. While processing it also deals with any symbol or literal
 ** encountered, encodes them or submits them to pass2 as needed. Generates and
 ** outputs faults where necessary. Returns nonzero (TRUE) on any serious fault
 ** where the compilation should stop. */
-auint opcpr_proc(compst_t* hnd, uint16* crom)
+auint opcpr_proc(compst_t* hnd, section_t* sec)
 {
  uint8        s[80];
  uint8 const* src = compst_getsstrcoff(hnd);
  auint        beg = strpr_nextnw(src, 0U);
 
- if (compst_getsect(hnd) != SECT_CODE){
+ if (section_getsect(hnd) != SECT_CODE){
   snprintf((char*)(&s[0]), 80U, "Probable code in non code section");
   fault_printat(FAULT_FAIL, &s[0], hnd);
   return 1U;
@@ -740,177 +783,177 @@ auint opcpr_proc(compst_t* hnd, uint16* crom)
  if       (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("add"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, OPCPR_CY | OPCPR_SW, 0x0800U);
+  return !opcpr_aops(hnd, sec, OPCPR_CY | OPCPR_SW, 0x0800U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("adc"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, OPCPR_CY, 0x1800U);
+  return !opcpr_aops(hnd, sec, OPCPR_CY, 0x1800U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("and"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, 0U, 0x4400U);
+  return !opcpr_aops(hnd, sec, 0U, 0x4400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("asr"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, OPCPR_CY, 0x3400U);
+  return !opcpr_aops(hnd, sec, OPCPR_CY, 0x3400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("btc"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_bops(hnd, crom, 0xA000U);
+  return !opcpr_bops(hnd, sec, 0xA000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("bts"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_bops(hnd, crom, 0xA800U);
+  return !opcpr_bops(hnd, sec, 0xA800U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("div"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, OPCPR_CY, 0x1400U);
+  return !opcpr_aops(hnd, sec, OPCPR_CY, 0x1400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jfr"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_cops(hnd, crom, 0U, 0x8800U);
+  return !opcpr_cops(hnd, sec, 0U, 0x8800U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jfa"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_cops(hnd, crom, 0U, 0x8900U);
+  return !opcpr_cops(hnd, sec, 0U, 0x8900U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jmr"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_jops(hnd, crom, 0x8C00U);
+  return !opcpr_jops(hnd, sec, 0x8C00U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jma"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_jops(hnd, crom, 0x8D00U);
+  return !opcpr_jops(hnd, sec, 0x8D00U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jms"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_rops(hnd, crom, 0x8400U);
+  return !opcpr_rops(hnd, sec, 0x8400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jsv"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_cops(hnd, crom, 1U, 0x8880U);
+  return !opcpr_cops(hnd, sec, 1U, 0x8880U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("mac"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, OPCPR_CY, 0x3000U);
+  return !opcpr_aops(hnd, sec, OPCPR_CY, 0x3000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("mov"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, OPCPR_CY | OPCPR_XM | OPCPR_X4 | OPCPR_SR | OPCPR_SW, 0x0000U);
+  return !opcpr_aops(hnd, sec, OPCPR_CY | OPCPR_XM | OPCPR_X4 | OPCPR_SR | OPCPR_SW, 0x0000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("mul"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, OPCPR_CY, 0x2000U);
+  return !opcpr_aops(hnd, sec, OPCPR_CY, 0x2000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("neg"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, 0U, 0x6400U);
+  return !opcpr_aops(hnd, sec, 0U, 0x6400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("nop"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_nops(hnd, crom, 0xC000U);
+  return !opcpr_nops(hnd, sec, 0xC000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("not"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, 0U, 0x2400U);
+  return !opcpr_aops(hnd, sec, 0U, 0x2400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("or" ))){
 
   compst_setcoffrel(hnd, beg + 2U);
-  return !opcpr_aops(hnd, crom, 0U, 0x4000U);
+  return !opcpr_aops(hnd, sec, 0U, 0x4000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("rfn"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_nops(hnd, crom, 0x8980U);
+  return !opcpr_nops(hnd, sec, 0x8980U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("sbc"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, OPCPR_CY, 0x1C00U);
+  return !opcpr_aops(hnd, sec, OPCPR_CY, 0x1C00U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("shl"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, OPCPR_CY, 0x2800U);
+  return !opcpr_aops(hnd, sec, OPCPR_CY, 0x2800U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("shr"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, OPCPR_CY, 0x2C00U);
+  return !opcpr_aops(hnd, sec, OPCPR_CY, 0x2C00U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("slc"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, OPCPR_CY, 0x3800U);
+  return !opcpr_aops(hnd, sec, OPCPR_CY, 0x3800U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("src"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, OPCPR_CY, 0x3C00U);
+  return !opcpr_aops(hnd, sec, OPCPR_CY, 0x3C00U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("sub"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, OPCPR_CY, 0x0C00U);
+  return !opcpr_aops(hnd, sec, OPCPR_CY, 0x0C00U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xbc"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_bops(hnd, crom, 0xA400U);
+  return !opcpr_bops(hnd, sec, 0xA400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xbs"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_bops(hnd, crom, 0xAC00U);
+  return !opcpr_bops(hnd, sec, 0xAC00U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xch"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, 0U, 0x1000U);
+  return !opcpr_aops(hnd, sec, 0U, 0x1000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xeq"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, 0U, 0xB000U);
+  return !opcpr_aops(hnd, sec, 0U, 0xB000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xne"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, 0U, 0xB800U);
+  return !opcpr_aops(hnd, sec, 0U, 0xB800U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xor"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, 0U, 0x5000U);
+  return !opcpr_aops(hnd, sec, 0U, 0x5000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xsg"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, 0U, 0xB400U);
+  return !opcpr_aops(hnd, sec, 0U, 0xB400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xug"))){
 
   compst_setcoffrel(hnd, beg + 3U);
-  return !opcpr_aops(hnd, crom, 0U, 0xBC00U);
+  return !opcpr_aops(hnd, sec, 0U, 0xBC00U);
 
  }else{
 
