@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.08
+**  \date      2014.10.14
 */
 
 
@@ -13,29 +13,28 @@
 
 
 
-/* Attempts to write out value at a given offset. In 'use' supply the form by
-** which to write out. The offset is truncated to the low 16 bits. Returns
-** nonzero (TRUE) if some severe failure arises where compilation shouldn't
-** continue. */
-auint valwr_write(uint16* dst, uint32 val, auint off, auint use, fault_off_t const* fof)
+/* Attempts to write out value at a given offset in the current section. In
+** 'use' supply the form by which to write out. Returns nonzero (TRUE) if some
+** severe failure arises where compilation shouldn't continue. Before writing
+** the value, the area should be occupied by normal section data pushes. */
+auint valwr_write(section_t* dst, uint32 val, auint off, auint use, fault_off_t const* fof)
 {
  uint8 s[80];
  auint o;
  auint t;
 
- o = off & 0xFFFFU;
  switch (use){
 
   case VALWR_C16:
-   dst[o] = val & 0xFFFFU;
+   section_setw(dst, o, val & 0xFFFFU);
    break;
 
   case VALWR_C8H:
-   dst[o] = (dst[o] & 0x00FFU) | ((val & 0xFFU) << 8);
+   section_setw(dst, o, val & 0xFF00U);
    break;
 
   case VALWR_C8L:
-   dst[o] = (dst[o] & 0xFF00U) | ((val & 0xFFU)     );
+   section_setw(dst, o, val & 0x00FFU);
    break;
 
   case VALWR_A4:
@@ -43,13 +42,12 @@ auint valwr_write(uint16* dst, uint32 val, auint off, auint use, fault_off_t con
     snprintf((char*)(&s[0]), 80U, "Value is too large, truncated");
     fault_print(FAULT_NOTE, &s[0], fof);
    }
-   dst[o] = (dst[o] & 0xFFF0U) | (val & 0x0FU);
+   section_setw(dst, o, val & 0x000FU);
    break;
 
   case VALWR_A16:
-   dst[o] = (dst[o] & 0xFFFCU) | ((val >> 14) & 0x3U);
-   o = (o + 1U) & 0xFFFFU;
-   dst[o] = (dst[o] & 0xC000U) | (val & 0x3FFFU);
+   section_setw(dst, o, (val >> 14) & 0x3U);
+   section_setw(dst, o + 1U, val & 0x3FFFU);
    break;
 
   case VALWR_B4:
@@ -57,15 +55,14 @@ auint valwr_write(uint16* dst, uint32 val, auint off, auint use, fault_off_t con
     snprintf((char*)(&s[0]), 80U, "Value is too large, truncated");
     fault_print(FAULT_NOTE, &s[0], fof);
    }
-   dst[o] = (dst[o] & 0xFC3FU) | ((val & 0x0FU) << 6);
+   section_setw(dst, o, (val & 0xFU) << 6);
    break;
 
   case VALWR_R16:
    /* This is for relative jumps, 16 bit offset (no range check necessary). */
    t = (val - o) & 0xFFFFU;
-   dst[o] = (dst[o] & 0xFFFCU) | ((val >> 14) & 0x3U);
-   o = (o + 1U) & 0xFFFFU;
-   dst[o] = (dst[o] & 0xC000U) | (val & 0x3FFFU);
+   section_setw(dst, o, (t >> 14) & 0x3U);
+   section_setw(dst, o + 1U, t & 0x3FFFU);
    break;
 
   case VALWR_R10:
@@ -78,7 +75,7 @@ auint valwr_write(uint16* dst, uint32 val, auint off, auint use, fault_off_t con
     fault_print(FAULT_FAIL, &s[0], fof);
     return 1U;
    }
-   dst[o] = (dst[o] & 0xFC00U) | (t & 0x03FFU);
+   section_setw(dst, o, t & 0x03FFU);
    break;
 
   default:
@@ -91,6 +88,8 @@ auint valwr_write(uint16* dst, uint32 val, auint off, auint use, fault_off_t con
  return 0U;
 }
 
+
+/* !! Will be removed */
 
 
 /* Like valwr_writeoff(), but uses the current compile state for offset &

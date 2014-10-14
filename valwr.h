@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.08
+**  \date      2014.10.14
 */
 
 
@@ -16,6 +16,7 @@
 #include "types.h"
 #include "fault.h"
 #include "compst.h"
+#include "section.h"
 
 
 /* Value usage: 16 bit constant for dw. Truncates silently. */
@@ -39,11 +40,14 @@
 ** masked. Other places if such is necessary warnings are raised. */
 
 
-/* Attempts to write out value at a given offset. In 'use' supply the form by
-** which to write out. The offset is truncated to the low 16 bits. Returns
-** nonzero (TRUE) if some severe failure arises where compilation shouldn't
-** continue. */
-auint valwr_write(uint16* dst, uint32 val, auint off, auint use, fault_off_t const* fof);
+/* Attempts to write out value at a given offset in the current section. In
+** 'use' supply the form by which to write out. Returns nonzero (TRUE) if some
+** severe failure arises where compilation shouldn't continue. Before writing
+** the value, the area should be occupied by normal section data pushes. */
+auint valwr_write(section_t* dst, uint32 val, auint off, auint use, fault_off_t const* fof);
+
+
+/* !!! Will be removed !!! */
 
 
 /* Like valwr_writeoff(), but uses the current compile state for offset &
