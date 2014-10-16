@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.14
+**  \date      2014.10.16
 **
 **  Manages the symbol table: creates entries, and for pass2, resolves those.
 **  Currently singleton, but designed so it is possible to extend later.
@@ -31,6 +31,7 @@
 
 #include "types.h"
 #include "section.h"
+#include "compst.h"
 #include "valwr.h"
 
 
@@ -40,12 +41,10 @@ typedef struct symtab_s symtab_t;
 
 /* Maximal number of symbol definitions. */
 #define SYMTAB_DEF_SIZE 32768U
-/* Maximal number of string symbol names. */
-#define SYMTAB_NAM_SIZE 8192U
 /* Maximal number of symbol usage entries. */
 #define SYMTAB_USE_SIZE 16384U
 /* String size for collecting symbol names. */
-#define SYMTAB_STR_SIZE (256U * 1024U)
+#define SYMTAB_STR_SIZE (24U * SYMTAB_USE_SIZE)
 
 /* Symbol definition command: Source 0 is name (s0n) for other symbol flag. */
 #define SYMTAB_CMD_S0N  0x4000U
@@ -56,26 +55,28 @@ typedef struct symtab_s symtab_t;
 /* Symbol definition command: Source 1 is ID (s1v) for other symbol flag. */
 #define SYMTAB_CMD_S1V  0x2000U
 
+/* Symbol definition command: Use only first source. */
+#define SYMTAB_CMD_MOV  0x00U
 /* Symbol definition command: Add sources. */
-#define SYMTAB_CMD_ADD  0x00U
+#define SYMTAB_CMD_ADD  0x01U
 /* Symbol definition command: Subtract: Sr0 - Sr1. */
-#define SYMTAB_CMD_SUB  0x01U
+#define SYMTAB_CMD_SUB  0x02U
 /* Symbol definition command: Multiply sources. */
-#define SYMTAB_CMD_MUL  0x02U
+#define SYMTAB_CMD_MUL  0x03U
 /* Symbol definition command: Divide: Sr0 / Sr1. */
-#define SYMTAB_CMD_DIV  0x03U
+#define SYMTAB_CMD_DIV  0x04U
 /* Symbol definition command: Modulo: Sr0 % Sr1. */
-#define SYMTAB_CMD_MOD  0x04U
+#define SYMTAB_CMD_MOD  0x05U
 /* Symbol definition command: AND: Sr0 & Sr1. */
-#define SYMTAB_CMD_AND  0x05U
+#define SYMTAB_CMD_AND  0x06U
 /* Symbol definition command: OR: Sr0 | Sr1. */
-#define SYMTAB_CMD_OR   0x06U
+#define SYMTAB_CMD_OR   0x07U
 /* Symbol definition command: XOR: Sr0 ^ Sr1. */
-#define SYMTAB_CMD_XOR  0x07U
+#define SYMTAB_CMD_XOR  0x08U
 /* Symbol definition command: Right shift: Sr0 >> Sr1. */
-#define SYMTAB_CMD_SHR  0x08U
+#define SYMTAB_CMD_SHR  0x09U
 /* Symbol definition command: Left shift: Sr0 << Sr1. */
-#define SYMTAB_CMD_SHL  0x09U
+#define SYMTAB_CMD_SHL  0x0AU
 
 
 
@@ -84,8 +85,8 @@ symtab_t* symtab_getobj(void);
 
 
 /* Initialize or resets a symbol table object (size is unchanged). The given
-** section object is bound to the symbol table. */
-void  symtab_init(symtab_t* hnd, section_t* sec);
+** section and compile state object is bound to the symbol table. */
+void  symtab_init(symtab_t* hnd, section_t* sec, compst_t* cst);
 
 
 /* Add new symbol definition to the table. Prints fault if the symbol
