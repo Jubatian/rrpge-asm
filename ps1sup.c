@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.14
+**  \date      2014.10.16
 */
 
 
@@ -29,15 +29,12 @@
 ** In the case of data allocations, also checks and reports overlaps. Note
 ** that it starts parsing the line at the last set char. position, so this way
 ** labels may be skipped (processed earlier using litpr_symdefproc()). */
-auint ps1sup_parsmisc(compst_t* hnd, section_t* sec)
+auint ps1sup_parsmisc(compst_t* hnd, section_t* sec, symtab_t* stb)
 {
  uint8        s[80];
  uint8 const* src = compst_getsstrcoff(hnd); /* Might not be first char (Labels!) */
- auint        pof;
  auint        sid = section_getsect(sec);
- auint        off = section_getoffw(sec);
  auint        beg = strpr_nextnw(src, 0U);
- uint16*      d16;
  auint        u;
  auint        t;
  uint32       v;
@@ -58,17 +55,17 @@ auint ps1sup_parsmisc(compst_t* hnd, section_t* sec)
   beg = strpr_nextnw(src, beg + 7U);
 
   if       (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("code"))){
-   compst_setsect(hnd, SECT_CODE);
+   section_setsect(sec, SECT_CODE);
   }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("data"))){
-   compst_setsect(hnd, SECT_DATA);
+   section_setsect(sec, SECT_DATA);
   }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("head"))){
-   compst_setsect(hnd, SECT_HEAD);
+   section_setsect(sec, SECT_HEAD);
   }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("desc"))){
-   compst_setsect(hnd, SECT_DESC);
+   section_setsect(sec, SECT_DESC);
   }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("zero"))){
-   compst_setsect(hnd, SECT_ZERO);
+   section_setsect(sec, SECT_ZERO);
   }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("file"))){
-   compst_setsect(hnd, SECT_FILE);
+   section_setsect(sec, SECT_FILE);
   }else{
    goto fault_ins;
   }
@@ -138,18 +135,13 @@ auint ps1sup_parsmisc(compst_t* hnd, section_t* sec)
     if (section_pushb(sec, v) != 0U){ goto fault_ovr; }
 
    }else if (t == LITPR_UND){        /* Undefined symbol - pass2 should do it */
-    /* !!! Needs to be modified !!! */
-    if (sid == SECT_CONS){
-     t = (off >> 1) | VALWR_APPH;
-    }else{
-     t = (off >> 1);
-    }
+    off = section_getoffb(sec);
+    section_pushb(sec, 0);
     if ((off & 1U) == 0U){
-     pass2_addsymuse(&(src[beg]), t, VALWR_C8H, hnd);
+     if (symtab_use(stb, &(src[beg]), off >> 1, VALWR_C8H)){ goto fault_oth; }
     }else{
-     pass2_addsymuse(&(src[beg]), t, VALWR_C8L, hnd);
+     if (symtab_use(stb, &(src[beg]), off >> 1, VALWR_C8L)){ goto fault_oth; }
     }
-    off = compst_incoffb(hnd, 1U);
 
    }else{                            /* Bad formatting */
     goto fault_inx;
@@ -180,14 +172,9 @@ auint ps1sup_parsmisc(compst_t* hnd, section_t* sec)
     if (section_pushw(sec, v) != 0U){ goto fault_ovr; }
 
    }else if (t == LITPR_UND){        /* Undefined symbol - pass2 should do it */
-    /* !!! Needs to be modified !!! */
-    if (sid == SECT_CONS){
-     t = off | VALWR_APPH;
-    }else{
-     t = off;
-    }
-    pass2_addsymuse(&(src[beg]), t, VALWR_C16, hnd);
-    off = compst_incoffw(hnd, 1U);
+    off = section_getoffw(sec);
+    section_pushw(sec, 0);
+    if (symtab_use(stb, &(src[beg]), off, VALWR_C16)){ goto fault_oth; }
 
    }else{                            /* Bad formatting */
     goto fault_inx;
@@ -258,5 +245,9 @@ fault_ovr:
  compst_setcoffrel(hnd, beg);
  snprintf((char*)(&s[0]), 80U, "Overlap or out of section encountered");
  fault_printat(FAULT_FAIL, &s[0], hnd);
+ return 0U;
+
+fault_oth:
+
  return 0U;
 }

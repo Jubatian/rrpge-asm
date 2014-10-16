@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.10.16
 */
 
 
@@ -20,12 +20,6 @@
 typedef struct compst_s compst_t;
 
 
-/* Supported memory sections */
-#define SECT_CODE   0U
-#define SECT_CONS   1U
-#define SECT_DATA   2U
-
-
 /* Maximal line size including terminator. The object won't accept more. */
 #define LINE_MAX  256U
 
@@ -37,49 +31,12 @@ typedef struct compst_s compst_t;
 
 
 
-/* Note: there is a problem in C with information hiding if it would be
-** desirable to work it out without dynamic memory allocation. So a static
-** object is supplied here for use, and no need for malloc. One object is
-** enough. So this is not a "new" implementation, just a static object. */
+/* Get built-in singleton object handle. */
 compst_t* compst_getobj(void);
 
 
 /* Inits a compilation state object */
 void  compst_init(compst_t* hnd);
-
-
-/* Sets section to use. */
-void  compst_setsect(compst_t* hnd, auint sect);
-
-
-/* Gets currently used section. */
-auint compst_getsect(compst_t* hnd);
-
-
-/* Sets offset within section, word granularity */
-void  compst_setoffw(compst_t* hnd, auint off);
-
-
-/* Sets offset within section, byte granularity */
-void  compst_setoffb(compst_t* hnd, auint off);
-
-
-/* Gets offset within section, word granularity. If offset is not at word
-** boundary, this increments first to boundary. */
-auint compst_getoffw(compst_t* hnd);
-
-
-/* Gets offset within section, byte granularity */
-auint compst_getoffb(compst_t* hnd);
-
-
-/* Increments offset within section, word granularity. If offset is not at
-** word boundary, this increments first to boundary. Returns new offset. */
-auint compst_incoffw(compst_t* hnd, auint inc);
-
-
-/* Increments offset within section, byte granularity. Returns new offset. */
-auint compst_incoffb(compst_t* hnd, auint inc);
 
 
 /* Copies symbol name from any source, returns number of characters the symbol

@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.14
+**  \date      2014.10.16
 */
 
 
@@ -16,6 +16,7 @@
 #include "types.h"
 #include "compst.h"
 #include "section.h"
+#include "symtab.h"
 
 
 /* Attempts to process the source line as one of the followings:
@@ -29,7 +30,7 @@
 ** In the case of data allocations, also checks and reports overlaps. Note
 ** that it starts parsing the line at the last set char. position, so this way
 ** labels may be skipped (processed earlier using litpr_symdefproc()). */
-auint ps1sup_parsmisc(compst_t* hnd, section_t* sec);
+auint ps1sup_parsmisc(compst_t* hnd, section_t* sec, symtab_t* stb);
 
 
 #endif

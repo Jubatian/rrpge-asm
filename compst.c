@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.10.16
 */
 
 
@@ -15,8 +15,6 @@
 
 /* Compilation state object structure - definition */
 struct compst_s{
- auint sec;            /* Currently selected section */
- auint off[3];         /* Offsets within sections, in bytes */
  uint8 fil[FILE_MAX];  /* Currently parsed file */
  auint lin;            /* Line within file */
  auint chr;            /* Character within line */
@@ -25,18 +23,12 @@ struct compst_s{
 };
 
 
-/* Just a compilation test to ensure section values stay as-is */
-#if ((SECT_CODE != 0U) || (SECT_CONS != 1U) || (SECT_DATA != 2U))
-#error "Don't tamper with section definition values!!!"
-#endif
-
-
-
-/* Note: there is a problem in C with information hiding if it would be
-** desirable to work it out without dynamic memory allocation. So a static
-** object is supplied here for use, and no need for malloc. One object is
-** enough. So this is not a "new" implementation, just a static object. */
+/* Built-in singleton object */
 static compst_t compst_obj;
+
+
+
+/* Get built-in singleton object handle. */
 compst_t* compst_getobj(void)
 {
  return &compst_obj;
@@ -49,98 +41,6 @@ void  compst_init(compst_t* hnd)
 {
  memset(hnd, 0U, sizeof(hnd));         /* This is almost all fine for it */
  hnd->off[SECT_DATA] = (0x3000U << 1); /* Data however starts at this offset */
-}
-
-
-
-/* Sets section to use. */
-void  compst_setsect(compst_t* hnd, auint sect)
-{
- if (sect > 2U){ hnd->sec = SECT_CODE; }
- else          { hnd->sec = sect; }
-}
-
-
-
-/* Gets currently used section. */
-auint compst_getsect(compst_t* hnd)
-{
- return hnd->sec;
-}
-
-
-
-/* Sets offset within section, word granularity */
-void  compst_setoffw(compst_t* hnd, auint off)
-{
- hnd->off[hnd->sec] = (off & 0xFFFFU) << 1;
- if ((hnd->sec) != SECT_CODE){
-  hnd->off[hnd->sec] &= 0x01FFEU;
-  if ((hnd->sec) == SECT_DATA){
-   hnd->off[hnd->sec] |= 0x06000U;
-  }
- }
-}
-
-
-
-/* Sets offset within section, byte granularity */
-void  compst_setoffb(compst_t* hnd, auint off)
-{
- hnd->off[hnd->sec] = off & 0x1FFFFU;
- if ((hnd->sec) != SECT_CODE){
-  hnd->off[hnd->sec] &= 0x01FFFU;
-  if ((hnd->sec) == SECT_DATA){
-   hnd->off[hnd->sec] |= 0x06000U;
-  }
- }
-}
-
-
-
-/* Gets offset within section, word granularity. If offset is not at word
-** boundary, this increments first to boundary. */
-auint compst_getoffw(compst_t* hnd)
-{
- if ((hnd->off[hnd->sec] & 1U) != 0U){
-  hnd->off[hnd->sec] ++;
-  if ((hnd->sec) != SECT_CODE){
-   hnd->off[hnd->sec] &= 0x01FFEU;
-   if ((hnd->sec) == SECT_DATA){
-    hnd->off[hnd->sec] |= 0x06000U;
-   }
-  }else{
-   hnd->off[hnd->sec] &= 0x1FFFEU;
-  }
- }
- return (hnd->off[hnd->sec] >> 1);
-}
-
-
-
-/* Gets offset within section, byte granularity */
-auint compst_getoffb(compst_t* hnd)
-{
- return hnd->off[hnd->sec];
-}
-
-
-
-/* Increments offset within section, word granularity. If offset is not at
-** word boundary, this increments first to boundary. Returns new offset. */
-auint compst_incoffw(compst_t* hnd, auint inc)
-{
- compst_setoffw(hnd, compst_getoffw(hnd) + inc);
- return compst_getoffw(hnd);
-}
-
-
-
-/* Increments offset within section, byte granularity. Returns new offset. */
-auint compst_incoffb(compst_t* hnd, auint inc)
-{
- compst_setoffb(hnd, compst_getoffb(hnd) + inc);
- return compst_getoffb(hnd);
 }
 
 
