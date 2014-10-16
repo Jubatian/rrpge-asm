@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.10.16
 */
 
 
@@ -23,20 +23,35 @@
 
 
 
+/* Section base symbols. Temporarily here, will need to be re-organized later
+** into some appropriate module. */
+uint8 const* litpr_secbs[6] = {
+ (uint8 const*)("$.code"),
+ (uint8 const*)("$.data"),
+ (uint8 const*)("$.head"),
+ (uint8 const*)("$.desc"),
+ (uint8 const*)("$.zero"),
+ (uint8 const*)("$.file") };
+
+
+
 /* Tries to interpret and retrieve value of a literal in the given string. The
 ** following outcomes are possible:
-** Valid literal found, value returned (LITPR_VAL).
-** Not yet defined symbol found (LITPR_UND).
-** String literal found (LITPR_STR).
-** String is not interpretable as literal (LITPR_INV).
-** LITPR_VAL may pair with LITPR_STR. If LITPR_STR is returned alone, it
-** indicates long (>4 chars) string. The interpretation stops when the line
-** terminates or a seperator (,), or a function ({ or }) or an addrssing mode
-** bracket (]) is found. Returns the offset of stopping (pointing at the ',',
-** ']', '{' or '}' if any) in 'len' (zero for LITPR_INV), and the value of the
-** literal in 'val' (only for LITPR_VAL). If LITPR_UND is returned, the symbol
-** should be appropriately submitted with pass2_addsymuse(). */
-auint litpr_getval(uint8 const* src, auint* len, uint32* val, compst_t* hnd)
+**
+** LITPR_VAL: Valid literal found, it's value is returned in 'val'.
+** LITPR_UND: An aggregate containing symbols found. The aggregate's members
+**            are submitted appropriately to the symbol table, in 'val' the
+**            top member's ID is returned (to be used with symtab_use()).
+** LITPR_STR: String literal is found. If LITPR_VAL is set along with it, the
+**            value of the literal is returned in 'val', otherwise not (the
+**            string is longer than 4 ASCII characters).
+** LITPR_INV: Error. An appropriate fault code is printed.
+**
+** The interpretation stops when the line terminates or a seperator (,), or a
+** function ({ or }) or an addrssing mode bracket (]) is found. Returns the
+** offset of stopping (pointing at the ',', ']', '{' or '}' if any) in 'len'
+** (zero for LITPR_INV). */
+auint litpr_getval(uint8 const* src, auint* len, auint* val, compst_t* hnd, symtab_t* stb)
 {
  auint e;               /* Position in string */
  auint u;               /* For generating the result in val */
@@ -123,11 +138,9 @@ auint litpr_getval(uint8 const* src, auint* len, uint32* val, compst_t* hnd)
  if (strpr_issym(src[0])){
   e = 0U;               /* Calculate symbol length */
   while (strpr_issym(src[e])){ e++; }
-  if (pass2_getsymval(src, val, hnd)){
-   r |= LITPR_VAL;
-   goto end_sok;        /* Symbol was defined, OK */
-  }
-  r |= LITPR_UND;       /* Undefined symbol */
+  val = symtab_getsymdef(stb, src);
+  if (val == 0U){ goto end_fault; }
+  r |= LITPR_UND;       /* Symbol aggregate */
   goto end_sok;
  }
 
@@ -165,11 +178,23 @@ end_fault:
 
 /* Checks for symbol definition on the beginning of the current line. If a
 ** valid symbol definition is found (either line label or equ) it is
-** submitted to pass2 as new symbol value. The current offset is used for
-** this when the symbol is a label. Returns nonzero if a symbol definition was
-** found and added the following way: If it is a label, returns the source
-** string position after the ':' (at least 2), if it is an equ, returns 1. */
-auint litpr_symdefproc(compst_t* hnd)
+** submitted to the symbol table as new symbol value. The following outcomes
+** are possible:
+**
+** LITPR_EQU: An 'equ'. The line is processed appropriately, creating symbol
+**            table entries if necessary.
+** LITPR_LBL: A label. In 'len' the source string position after the ':' is
+**            returned. An symbol aggregate appropriate to the section type
+**            ('$.code', '$.data', '$.head', '$.desc', '$.zero' or '$.file')
+**            is created in the symbol table.
+** LITPR_INV: An error was encountered during processing, fault code was
+**            printed.
+**
+** In the case of LITPR_LBL, the line should be processed further from the
+** position returned in 'len'. If there is no processable content on the line,
+** LITPR_LBL is returned with 'len' set to zero, so other processors may pick
+** up working with the line. */
+auint litpr_symdefproc(auint* len, compst_t* hnd, section_t* sec, symtab_t* stb)
 {
  auint  i;
  auint  r;
@@ -177,12 +202,13 @@ auint litpr_symdefproc(compst_t* hnd)
  uint32 v;
  uint8 const* s;
 
+ *len = 0U; /* No processable content case */
  s = compst_getsstr(hnd);
 
  i = 0U;
  while (strpr_issym(s[i])){ i++; }
 
- if (i == 0U){ return 0U; } /* No symbol here */
+ if (i == 0U){ return LITPR_LBL; } /* No symbol here */
 
  /* Check for ':' or 'equ' */
 
@@ -190,20 +216,32 @@ auint litpr_symdefproc(compst_t* hnd)
 
  if (s[i] == ':'){   /* Line label: the symbol's value is the offset */
   compst_setgsym(hnd, &s[0]);      /* Add global symbol (if it is global) */
-  pass2_addsymval(&s[0], compst_getoffw(hnd), hnd);
-  return (i + 1U);   /* OK, found, added, done */
+  *len = i + 1U;
+  i = symtab_addsymdef(stb, SYMTAB_CMD_ADD | SYMTAB_CMD_S1N,
+                       section_getoffw(sec), NULL,
+                       0U, litpr_secbs[section_getsect(sec)]);
+  if (i == 0U){ return LITPR_INV; }
+  i = symtab_bind(stb, &s[0], i);
+  if (i == 0U){ return LITPR_INV; }
+  return LITPR_LBL;  /* OK, found, added, done */
  }
 
  if (compst_issymequ(NULL, &(s[i]), (uint8 const*)("equ"))){
   i = strpr_nextnw(&s[0], i + 3U); /* Skip whites after equ */
-  r = litpr_getval(&s[i], &t, &v, hnd);
+  r = litpr_getval(&s[i], &t, &v, hnd, stb);
   if ((r & LITPR_VAL) != 0U){      /* Valid literal, so can be stored */
-   pass2_addsymval(&s[0], v, hnd);
-   return 1U;
+   v = symtab_addsymdef(stb, SYMTAB_CMD_MOV, v, NULL, 0U, NULL);
+   if (v == 0U){ return LITPR_INV; }
+  }
+  if ( ((r & LITPR_VAL) != 0U)
+       ((r & LITPR_UND) != 0U) ){  /* Valid literal or symbol aggregate */
+   i = symtab_bind(stb, &s[0], v);
+   if (i == 0U){ return LITPR_INV; }
+   return LITPR_EQU;
   }
  }
 
- /* No parseable label or equ found */
+ /* No parseable label or equ found: maybe something else will parse it */
 
- return 0U;
+ return LITPR_LBL;
 }

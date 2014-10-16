@@ -36,7 +36,7 @@ typedef struct{
  auint sec;             /* Section of data */
  auint off;             /* Offset of data within the section */
  auint use;             /* Data type (as defined in valwr.h) */
- auint bdi;             /* String bind index */
+ auint bdi;             /* Definition bind index */
  uint8 fil[FILE_MAX];   /* File name for fault */
  fault_off_t fof;       /* Location of definition for fault */
 }symtab_use_t;
@@ -219,10 +219,42 @@ fault_ot0:
 
 
 
+/* Gets a symbol definition by symbol name. If the symbol definition does not
+** exists, it creates a "dangling" definition referring the given name, and
+** returns that. Returns ID of the definition (nonzero), or zero (!) if it is
+** not possible to do this (fault code printed). */
+auint symtab_getsymdef(symtab_t* hnd, uint8 const* nam)
+{
+ auint i;
+ auint j;
+ auint r;
+
+ i = symtab_snfind(hnd, nam);
+
+ if (i != 0U){ /* String already exists, check for related definition */
+
+  for (j = 1U; j < (hnd->dct); j++){
+   if ((hnd->def[j].bdi) == i){ /* OK, appropriate definition found */
+    r = j;
+    break;
+   }
+  }
+
+ }else{        /* Does not exist: add "dangling" symbol definition */
+
+  r = symtab_addsymdef(hnd, SYMTAB_CMD_MOV | SYMTAB_CMD_S0N, 0, nam, 0, NULL);
+
+ }
+
+ return r;
+}
+
+
+
 /* Add symbol name string binding to a symbol definition. Prints fault if it
-** can not be done. Returns nonzero on failure (symbol name space exhausted).
-** The name terminates with a white character, and does not need to be
-** preserved after addition. */
+** can not be done. Returns nonzero on failure (symbol name space exhausted
+** or redefinition). The name terminates with a white character, and does not
+** need to be preserved after addition. */
 auint symtab_bind(symtab_t* hnd, uint8 const* nam, auint id)
 {
  uint8 s[80];
@@ -264,18 +296,20 @@ fault_ot1:
 
 /* Add symbol usage. The 'off' parameter supplies the offset within the
 ** section where the symbol will have to be resolved. The 'use' parameter
-** gives the usage as defined in valwr.h. The name terminates with a white
-** character. The symbol does not need to be bound at this point. Returns
-** nonzero and prints fault if it is not possible to add this. */
-auint symtab_use(symtab_t* hnd, uint8 const* nam, auint off, auint use)
+** gives the usage as defined in valwr.h. A symbol definition has to be passed
+** to this function, however it is possible to submit usage for a not-yet
+** defined symbol by creating a "dangling" definition (with a MOV command,
+** symbol name source) to bind to. Returns nonzero and prints fault if it is
+** not possible to add this. */
+auint symtab_use(symtab_t* hnd, auint def, auint off, auint use)
 {
  uint8 s[80];
  auint i;
 
- /* Find or create string */
+ /* Check ID validity */
 
- i = symtab_snfindadd(hnd, nam);
- if (i == 0U){ goto fault_ot2; } /* Failed to add */
+ if ( (def == 0U) ||
+      (def >= hnd->dct) ){ goto fault_idi; }
 
  /* Add the new symbol usage definition */
 
@@ -283,7 +317,7 @@ auint symtab_use(symtab_t* hnd, uint8 const* nam, auint off, auint use)
  hnd->use[hnd->uct].sec = section_getsect(hnd->sec);
  hnd->use[hnd->uct].off = off;
  hnd->use[hnd->uct].use = use;
- hnd->use[hnd->uct].bdi = i;
+ hnd->use[hnd->uct].bdi = def;
  fault_fofget(&(hnd->use[hnd->uct].fof), hnd->cst, &(hnd->use[hnd->uct].fil[0]));
  hnd->uct ++;
  return 0U;
@@ -294,9 +328,11 @@ fault_sus:
  fault_printat(FAULT_FAIL, &s[0], hnd->cst);
  return 1U;
 
-fault_ot2:
+fault_idn:
 
- return 1U;
+ snprintf((char*)(&s[0]), 80U, "Symbol definition ID invalid");
+ fault_printat(FAULT_FAIL, &s[0], hnd->cst);
+ return 0U;
 }
 
 
@@ -380,25 +416,6 @@ auint symtab_resolve(symtab_t* hnd)
  auint uct = hnd->uct;
  auint dct = hnd->dct;
 
- /* Attempt to resolve symbol usages to symbol definitions, replacing the
- ** 'bdi' members accordingly. */
-
- for (j = 1U; j < dct; j++){
-  t = def[j].bdi;
-  for (i = 1U; i < uct; i++){
-   if ((use[i].bdi) == t){
-    use[i].bdi = 0x80000000U | t;
-   }
-  }
- }
-
- /* Remove processed marks along with checking for symbols left undefined */
-
- for (i = 1U; i < uct; i++){
-  if ((use[i].bdi & 0x80000000U) == 0U){ goto fault_udu; }
-  use[i].bdi &= ~0x80000000U;
- }
-
  /* Attemt to resolve strings in symbol definitions to indices */
 
  for (j = 1U; j < dct; j++){
@@ -444,12 +461,6 @@ auint symtab_resolve(symtab_t* hnd)
  /* All done */
 
  return 0U;
-
-fault_udu:
-
- snprintf((char*)(&s[0]), 80U, "Undefined symbol: %s", (char const*)(hnd->str[use[i].bdi]));
- fault_print(FAULT_FAIL, &s[0], &(use[i].fof));
- return 1U;
 
 fault_udd:
 

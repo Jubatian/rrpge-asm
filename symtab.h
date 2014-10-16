@@ -100,19 +100,28 @@ auint symtab_addsymdef(symtab_t* hnd, auint cmd,
                        auint s1v, uint8 const* s1n);
 
 
+/* Gets a symbol definition by symbol name. If the symbol definition does not
+** exists, it creates a "dangling" definition referring the given name, and
+** returns that. Returns ID of the definition (nonzero), or zero (!) if it is
+** not possible to do this (fault code printed). */
+auint symtab_getsymdef(symtab_t* hnd, uint8 const* nam);
+
+
 /* Add symbol name string binding to a symbol definition. Prints fault if it
-** can not be done. Returns nonzero on failure (symbol name space exhausted).
-** The name terminates with a white character, and does not need to be
-** preserved after addition. */
+** can not be done. Returns nonzero on failure (symbol name space exhausted
+** or redefinition). The name terminates with a white character, and does not
+** need to be preserved after addition. */
 auint symtab_bind(symtab_t* hnd, uint8 const* nam, auint id);
 
 
 /* Add symbol usage. The 'off' parameter supplies the offset within the
 ** section where the symbol will have to be resolved. The 'use' parameter
-** gives the usage as defined in valwr.h. The name terminates with a white
-** character. The symbol does not need to be bound at this point. Returns
-** nonzero and prints fault if it is not possible to add this. */
-auint symtab_use(symtab_t* hnd, uint8 const* nam, auint off, auint use);
+** gives the usage as defined in valwr.h. A symbol definition has to be passed
+** to this function, however it is possible to submit usage for a not-yet
+** defined symbol by creating a "dangling" definition (with a MOV command,
+** symbol name source) to bind to. Returns nonzero and prints fault if it is
+** not possible to add this. */
+auint symtab_use(symtab_t* hnd, auint def, auint off, auint use);
 
 
 /* Resolves the symbol table into the bound section. Prints fault and returns
