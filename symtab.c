@@ -155,6 +155,21 @@ void  symtab_init(symtab_t* hnd, section_t* sec, compst_t* cst)
 
 
 
+/* Get bound compilation state object. */
+compst_t*  symtab_getcompst(symtab_t* hnd)
+{
+ return hnd->cst;
+}
+
+
+/* Get bound section object. */
+section_t* symtab_getsectob(symtab_t* hnd)
+{
+ return hnd->sec;
+}
+
+
+
 /* Add new symbol definition to the table. Prints fault if the symbol
 ** definition can not be added. Returns ID of the definition (nonzero), or
 ** zero (!) if it was not possible to add. Parameters: 'cmd': The command to

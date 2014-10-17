@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.14
+**  \date      2014.10.16
 **
 **  Manages the sections and their data during the compilation. Currently
 **  singleton, but desinged so it is possible to extend later.
@@ -62,7 +62,7 @@ struct section_s{
 
 
 /* Section maximal sizes */
-auint const section_s[5] = {
+static auint const section_s[5] = {
  CODE_S,                /* Code */
  DATA_S,                /* Data */
  HEAD_S,                /* Head */
@@ -70,12 +70,24 @@ auint const section_s[5] = {
  ZERO_S};               /* Zero */
 
 /* Section start offsets within section data */
-auint const section_o[5] = {
+static auint const section_o[5] = {
  CODE_O,                /* Code */
  DATA_O,                /* Data */
  HEAD_O,                /* Head */
  DESC_O,                /* Desc */
  ZERO_O};               /* Zero (in map only) */
+
+
+
+/* Section base symbols */
+static uint8 const* section_secbs[6] = {
+ (uint8 const*)("$.code"),
+ (uint8 const*)("$.data"),
+ (uint8 const*)("$.head"),
+ (uint8 const*)("$.desc"),
+ (uint8 const*)("$.zero"),
+ (uint8 const*)("$.file") };
+
 
 
 
@@ -109,6 +121,19 @@ static auint section_i_getocc(auint off, uint32 const* map, auint siz)
 section_t* section_getobj(void)
 {
  return &section_obj;
+}
+
+
+
+/* Retrieves string for identifying the section base symbol. These are:
+** '$.code', '$.data', '$.head', '$.desc', '$.zero', and '$.file'. */
+uint8 const* section_getsbstr(auint sec)
+{
+ if (sec <= SECT_IDM){
+  return (section_sectbs[sec]);
+ }else{
+  return NULL;
+ }
 }
 
 

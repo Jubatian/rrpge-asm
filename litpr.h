@@ -46,7 +46,7 @@
 ** function ({ or }) or an addrssing mode bracket (]) is found. Returns the
 ** offset of stopping (pointing at the ',', ']', '{' or '}' if any) in 'len'
 ** (zero for LITPR_INV). */
-auint litpr_getval(uint8 const* src, auint* len, auint* val, compst_t* hnd, symtab_t* stb);
+auint litpr_getval(uint8 const* src, auint* len, auint* val, symtab_t* stb);
 
 
 /* Checks for symbol definition on the beginning of the current line. If a
@@ -67,7 +67,7 @@ auint litpr_getval(uint8 const* src, auint* len, auint* val, compst_t* hnd, symt
 ** position returned in 'len'. If there is no processable content on the line,
 ** LITPR_LBL is returned with 'len' set to zero, so other processors may pick
 ** up working with the line. */
-auint litpr_symdefproc(auint* len, compst_t* hnd, section_t* sec, symtab_t* stb);
+auint litpr_symdefproc(auint* len, symtab_t* stb);
 
 
 #endif

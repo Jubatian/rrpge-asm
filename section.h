@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.14
+**  \date      2014.10.16
 **
 **  Manages the sections and their data during the compilation. Currently
 **  singleton, but desinged so it is possible to extend later.
@@ -46,6 +46,11 @@ typedef struct section_s section_t;
 
 /* Get built-in singleton object handle. */
 section_t* section_getobj(void);
+
+
+/* Retrieves string for identifying the section base symbol. These are:
+** '$.code', '$.data', '$.head', '$.desc', '$.zero', and '$.file'. */
+uint8 const* section_getsbstr(auint sec);
 
 
 /* Initializes or resets a section object. */

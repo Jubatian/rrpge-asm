@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.16
+**  \date      2014.10.17
 */
 
 
@@ -13,7 +13,6 @@
 #include "fault.h"
 #include "litpr.h"
 #include "strpr.h"
-#include "pass2.h"
 #include "valwr.h"
 
 
@@ -29,7 +28,7 @@
 ** In the case of data allocations, also checks and reports overlaps. Note
 ** that it starts parsing the line at the last set char. position, so this way
 ** labels may be skipped (processed earlier using litpr_symdefproc()). */
-auint ps1sup_parsmisc(compst_t* hnd, section_t* sec, symtab_t* stb)
+auint ps1sup_parsmisc(symtab_t* stb)
 {
  uint8        s[80];
  uint8 const* src = compst_getsstrcoff(hnd); /* Might not be first char (Labels!) */
@@ -39,6 +38,8 @@ auint ps1sup_parsmisc(compst_t* hnd, section_t* sec, symtab_t* stb)
  auint        t;
  uint32       v;
  uint8        ste[LINE_MAX];
+ compst_t*    cst = symtab_getcompst(stb);
+ section_t*   sec = symtab_getsectob(stb);
 
  if (strpr_isend(src[beg])){
   return 1U;            /* No content on this line, so processed succesful */
@@ -77,14 +78,14 @@ auint ps1sup_parsmisc(compst_t* hnd, section_t* sec, symtab_t* stb)
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("org"))){
 
-  /* Set origin. Note: no undefined symbols allowed here! */
+  /* Set origin. Note: no symbols allowed here! */
 
   beg = strpr_nextnw(src, beg + 3U);
-  t = litpr_getval(&(src[beg]), &u, &v, hnd);
+  t = litpr_getval(&(src[beg]), &u, &v, stb);
   if ( (t != LITPR_VAL) || (v > 0xFFFFU) ){
    goto fault_ino;
   }
-  section_setoffw(hnd, v);
+  section_setoffw(sec, v);
 
   beg = beg + u;                     /* End of string? */
   if (!strpr_isend(src[beg])){ goto fault_ins; }
@@ -93,12 +94,12 @@ auint ps1sup_parsmisc(compst_t* hnd, section_t* sec, symtab_t* stb)
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("ds"))){
 
-  /* Reserve data words. Only in ZERO section */
+  /* Reserve data words. Only in ZERO section. Note: no symbols allowed as ds' parameter. */
 
   if (sid != SECT_ZERO){ goto fault_dsz; }
 
   beg = strpr_nextnw(src, beg + 2U);
-  t = litpr_getval(&(src[beg]), &u, &v, hnd);
+  t = litpr_getval(&(src[beg]), &u, &v, stb);
   if ( (t != LITPR_VAL) || (v > 0xFFFFU) ){
    goto fault_ind;
   }
@@ -120,7 +121,7 @@ auint ps1sup_parsmisc(compst_t* hnd, section_t* sec, symtab_t* stb)
 
   beg = strpr_nextnw(src, beg + 2U);
   while(1){
-   t = litpr_getval(&(src[beg]), &u, &v, hnd);
+   t = litpr_getval(&(src[beg]), &u, &v, stb);
 
    if ((t & LITPR_STR) != 0U){       /* String (any) */
     if (strpr_extstr(&(ste[0]), &(src[beg]), LINE_MAX)==0){ goto fault_inx; }
@@ -138,9 +139,9 @@ auint ps1sup_parsmisc(compst_t* hnd, section_t* sec, symtab_t* stb)
     off = section_getoffb(sec);
     section_pushb(sec, 0);
     if ((off & 1U) == 0U){
-     if (symtab_use(stb, &(src[beg]), off >> 1, VALWR_C8H)){ goto fault_oth; }
+     if (symtab_use(stb, v, off >> 1, VALWR_C8H)){ goto fault_oth; }
     }else{
-     if (symtab_use(stb, &(src[beg]), off >> 1, VALWR_C8L)){ goto fault_oth; }
+     if (symtab_use(stb, v, off >> 1, VALWR_C8L)){ goto fault_oth; }
     }
 
    }else{                            /* Bad formatting */
@@ -166,7 +167,7 @@ auint ps1sup_parsmisc(compst_t* hnd, section_t* sec, symtab_t* stb)
 
   beg = strpr_nextnw(src, beg + 2U);
   while(1){
-   t = litpr_getval(&(src[beg]), &u, &v, hnd);
+   t = litpr_getval(&(src[beg]), &u, &v, stb);
 
    if ((t & LITPR_VAL) != 0U){       /* Value */
     if (section_pushw(sec, v) != 0U){ goto fault_ovr; }
@@ -174,7 +175,7 @@ auint ps1sup_parsmisc(compst_t* hnd, section_t* sec, symtab_t* stb)
    }else if (t == LITPR_UND){        /* Undefined symbol - pass2 should do it */
     off = section_getoffw(sec);
     section_pushw(sec, 0);
-    if (symtab_use(stb, &(src[beg]), off, VALWR_C16)){ goto fault_oth; }
+    if (symtab_use(stb, v, off, VALWR_C16)){ goto fault_oth; }
 
    }else{                            /* Bad formatting */
     goto fault_inx;
@@ -200,49 +201,49 @@ auint ps1sup_parsmisc(compst_t* hnd, section_t* sec, symtab_t* stb)
 
 fault_ins:
 
- compst_setcoffrel(hnd, beg);
+ compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "Malformed section specification");
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
 
 fault_ino:
 
- compst_setcoffrel(hnd, beg);
+ compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "Malformed origin");
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
 
 fault_dsz:
 
- compst_setcoffrel(hnd, beg);
+ compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "\'ds\' is only allowed in zero section");
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
 
 fault_ind:
 
- compst_setcoffrel(hnd, beg);
+ compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "Malformed \'ds\'");
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
 
 fault_dxs:
 
- compst_setcoffrel(hnd, beg);
+ compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "\'db\' or \'dw\' is only allowed in code, data, head or desc");
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
 
 fault_inx:
 
- compst_setcoffrel(hnd, beg);
+ compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "Malformed \'db\' or \'dw\'");
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;
 
 fault_ovr:
 
- compst_setcoffrel(hnd, beg);
+ compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "Overlap or out of section encountered");
  fault_printat(FAULT_FAIL, &s[0], hnd);
  return 0U;

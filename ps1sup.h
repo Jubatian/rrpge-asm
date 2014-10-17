@@ -30,7 +30,7 @@
 ** In the case of data allocations, also checks and reports overlaps. Note
 ** that it starts parsing the line at the last set char. position, so this way
 ** labels may be skipped (processed earlier using litpr_symdefproc()). */
-auint ps1sup_parsmisc(compst_t* hnd, section_t* sec, symtab_t* stb);
+auint ps1sup_parsmisc(symtab_t* stb);
 
 
 #endif

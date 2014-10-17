@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.14
+**  \date      2014.10.17
 */
 
 
@@ -16,6 +16,7 @@
 #include "types.h"
 #include "compst.h"
 #include "section.h"
+#include "symtab.h"
 
 
 /* Attempts to process an opcode beginning at the current position in the
@@ -25,7 +26,7 @@
 ** encountered, encodes them or submits them to pass2 as needed. Generates and
 ** outputs faults where necessary. Returns nonzero (TRUE) on any serious fault
 ** where the compilation should stop. */
-auint opcpr_proc(compst_t* hnd, section_t* sec);
+auint opcpr_proc(symtab_t* stb);
 
 
 #endif

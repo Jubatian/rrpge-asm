@@ -5,13 +5,12 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.16
+**  \date      2014.10.17
 */
 
 
 
 #include "litpr.h"
-#include "pass2.h"
 #include "strpr.h"
 
 
@@ -20,18 +19,6 @@
 #if (LITPR_INV != 0U)
 #error "LITPR_INV must be 0"
 #endif
-
-
-
-/* Section base symbols. Temporarily here, will need to be re-organized later
-** into some appropriate module. */
-uint8 const* litpr_secbs[6] = {
- (uint8 const*)("$.code"),
- (uint8 const*)("$.data"),
- (uint8 const*)("$.head"),
- (uint8 const*)("$.desc"),
- (uint8 const*)("$.zero"),
- (uint8 const*)("$.file") };
 
 
 
@@ -51,7 +38,7 @@ uint8 const* litpr_secbs[6] = {
 ** function ({ or }) or an addrssing mode bracket (]) is found. Returns the
 ** offset of stopping (pointing at the ',', ']', '{' or '}' if any) in 'len'
 ** (zero for LITPR_INV). */
-auint litpr_getval(uint8 const* src, auint* len, auint* val, compst_t* hnd, symtab_t* stb)
+auint litpr_getval(uint8 const* src, auint* len, auint* val, symtab_t* stb)
 {
  auint e;               /* Position in string */
  auint u;               /* For generating the result in val */
@@ -194,16 +181,18 @@ end_fault:
 ** position returned in 'len'. If there is no processable content on the line,
 ** LITPR_LBL is returned with 'len' set to zero, so other processors may pick
 ** up working with the line. */
-auint litpr_symdefproc(auint* len, compst_t* hnd, section_t* sec, symtab_t* stb)
+auint litpr_symdefproc(auint* len, symtab_t* stb)
 {
  auint  i;
  auint  r;
  auint  t;
  uint32 v;
  uint8 const* s;
+ compst_t*  cst = symtab_getcompst(stb);
+ section_t* sec = symtab_getsectob(stb);
 
  *len = 0U; /* No processable content case */
- s = compst_getsstr(hnd);
+ s = compst_getsstr(cst);
 
  i = 0U;
  while (strpr_issym(s[i])){ i++; }
@@ -215,11 +204,11 @@ auint litpr_symdefproc(auint* len, compst_t* hnd, section_t* sec, symtab_t* stb)
  i = strpr_nextnw(&s[0], i);
 
  if (s[i] == ':'){   /* Line label: the symbol's value is the offset */
-  compst_setgsym(hnd, &s[0]);      /* Add global symbol (if it is global) */
+  compst_setgsym(cst, &s[0]);      /* Add global symbol (if it is global) */
   *len = i + 1U;
   i = symtab_addsymdef(stb, SYMTAB_CMD_ADD | SYMTAB_CMD_S1N,
                        section_getoffw(sec), NULL,
-                       0U, litpr_secbs[section_getsect(sec)]);
+                       0U, section_getsbstr[section_getsect(sec)]);
   if (i == 0U){ return LITPR_INV; }
   i = symtab_bind(stb, &s[0], i);
   if (i == 0U){ return LITPR_INV; }
@@ -228,7 +217,7 @@ auint litpr_symdefproc(auint* len, compst_t* hnd, section_t* sec, symtab_t* stb)
 
  if (compst_issymequ(NULL, &(s[i]), (uint8 const*)("equ"))){
   i = strpr_nextnw(&s[0], i + 3U); /* Skip whites after equ */
-  r = litpr_getval(&s[i], &t, &v, hnd, stb);
+  r = litpr_getval(&s[i], &t, &v, stb);
   if ((r & LITPR_VAL) != 0U){      /* Valid literal, so can be stored */
    v = symtab_addsymdef(stb, SYMTAB_CMD_MOV, v, NULL, 0U, NULL);
    if (v == 0U){ return LITPR_INV; }
