@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.20
 */
 
 
@@ -40,6 +40,11 @@ void fault_print(auint sev, uint8 const* dsc, fault_off_t const* off);
 
 /* Prints out a failure message for the current offset. */
 void fault_printat(auint sev, uint8 const* dsc, compst_t* hnd);
+
+
+/* Prints out source independent fault (use if it is not possible to
+** determine the source of the problem, but don't prefer it) */
+void fault_printgen(auint sev, uint8 const* dsc);
 
 
 /* Deep copies a fault offset. It also takes in the target file name string's

@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.20
 **
 **  Manages the sections and their data during the compilation. Currently
 **  singleton, but desinged so it is possible to extend later.
@@ -27,11 +27,11 @@
 
 
 /* Section sizes and start offsets in a combined data block */
-#define CODE_S (65536U)
-#define DATA_S (65536U - 0x800U - 0x40U)
-#define HEAD_S (65536U)
-#define DESC_S (20U)
-#define ZERO_S (65536U - 0x800U - 0x40U)
+#define CODE_S 65536U
+#define DATA_S SECT_MAXRAM
+#define HEAD_S 65536U
+#define DESC_S 20U
+#define ZERO_S SECT_MAXRAM
 #define CODE_O (0U)
 #define DATA_O (CODE_O + CODE_S)
 #define HEAD_O (DATA_O + DATA_S)
@@ -286,6 +286,59 @@ void  section_setb(section_t* hnd, auint off, auint data)
 
   if (section_i_getocc(off >> 1, &(hnd->o[section_o[s] >> 5]), section_s[s]) != 0U){
    hnd->d[section_o[s] + (off >> 1)] |= (uint16)((data & 0xFFU) << ((1U ^ (off & 1U)) << 3));
+  }
+
+ }
+}
+
+
+
+/* Forces an unit of word data into the section, overriding if anything is
+** there. This is meant to be used by autofills. Sets occupation for the
+** forced word. */
+void  section_fsetw(section_t* hnd, auint off, auint data)
+{
+ auint s = hnd->s;
+
+ if (s <= SECT_IMD_D){    /* Only for sections with data */
+
+  if (off < section_s[s]){
+   hnd->d[section_o[s] + off] = (uint16)(data);
+   section_i_setocc(off, &(hnd->o[section_o[s] >> 5]), section_s[s]);
+  }
+
+ }
+}
+
+
+
+/* Adds padding 0x20 (space) character if necessary: overrides zeros in
+** occupied areas (string terminator), and writes any unoccupied area. Uses
+** word offsets, applying the padding to both bytes as necessary. */
+void  section_strpad(section_t* hnd, auint off)
+{
+ auint s = hnd->s;
+
+ if (s <= SECT_IMD_D){    /* Only for sections with data */
+
+  if (off < section_s[s]){
+
+   if (section_i_getocc(off, &(hnd->o[section_o[s] >> 5]), section_s[s]) == 0U){
+
+    hnd->d[section_o[s] + off] = 0x2020U;
+    section_i_setocc(off, &(hnd->o[section_o[s] >> 5]), section_s[s]);
+
+   }else{
+
+    if ((hnd->d[section_o[s] + off] & 0x00FFU) == 0U){
+     hnd->d[section_o[s] + off] |= 0x0020U;
+    }
+    if ((hnd->d[section_o[s] + off] & 0xFF00U) == 0U){
+     hnd->d[section_o[s] + off] |= 0x2000U;
+    }
+
+   }
+
   }
 
  }

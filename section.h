@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.20
 **
 **  Manages the sections and their data during the compilation. Currently
 **  singleton, but desinged so it is possible to extend later.
@@ -32,11 +32,18 @@ typedef struct section_s section_t;
 #define SECT_ZERO 4U
 #define SECT_FILE 5U
 
+/* Count of sections */
+#define SECT_CNT  6U
+
 /* The FILE section is special: it does not accept operations; it is meant
 ** to be used for adding data to the application binary. */
 
 /* The ZERO section is special: it has no data, however it accepts operations
 ** normally. */
+
+
+/* Maximal allowed CPU RAM usage (SECT_DATA & SECT_ZERO) */
+#define SECT_MAXRAM   (0x10000U - 0x800U - 0x40U)
 
 
 /* Error codes. OVR: Overlap. OVF: Overflow (out of range). */
@@ -99,6 +106,18 @@ void  section_setw(section_t* hnd, auint off, auint data);
 ** used by second pass to substitue values which could not be resolved
 ** earlier. Will only have effect in areas already occupied. OR combines. */
 void  section_setb(section_t* hnd, auint off, auint data);
+
+
+/* Forces an unit of word data into the section, overriding if anything is
+** there. This is meant to be used by autofills. Sets occupation for the
+** forced word. */
+void  section_fsetw(section_t* hnd, auint off, auint data);
+
+
+/* Adds padding 0x20 (space) character if necessary: overrides zeros in
+** occupied areas (string terminator), and writes any unoccupied area. Uses
+** word offsets, applying the padding to both bytes as necessary. */
+void  section_strpad(section_t* hnd, auint off);
 
 
 /* Set section base offset. */

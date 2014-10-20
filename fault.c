@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.20
 */
 
 
@@ -41,6 +41,17 @@ void fault_printat(auint sev, uint8 const* dsc, compst_t* hnd)
  fault_print(sev, dsc, &cur);
 }
 
+
+/* Prints out source independent fault (use if it is not possible to
+** determine the source of the problem, but don't prefer it) */
+void fault_printgen(auint sev, uint8 const* dsc)
+{
+ fault_off_t cur;
+ cur.fil = (uint8 const*)("<no file>");
+ cur.lin = 0U;
+ cur.chr = 0U;
+ fault_print(sev, dsc, &cur);
+}
 
 
 /* Deep copies a fault offset. It also takes in the target file name string's

@@ -6,231 +6,195 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.20
 */
 
 
 #include "pass2.h"
-#include "strpr.h"
 
 
 
-/* Maximal number of symbol table entries */
-#define SYMTABLE_SIZE  4096U
-/* Maximal number of usage entries */
-#define SYMUSE_SIZE   16384U
+/* Head autofill contents */
+static const uint16 pass2_h_adat[32] = {
+ ((auint)( 'R') << 8) + (auint)( 'P'),
+ ((auint)( 'A') << 8) + (auint)('\n'),
+ ((auint)('\n') << 8) + (auint)( 'A'),
+ ((auint)( 'p') << 8) + (auint)( 'p'),
+ ((auint)( 'A') << 8) + (auint)( 'u'),
+ ((auint)( 't') << 8) + (auint)( 'h'),
+ ((auint)( ':') << 8) + (auint)( ' '),
+ ((auint)('\n') << 8) + (auint)( 'A'),
+ ((auint)( 'p') << 8) + (auint)( 'p'),
+ ((auint)( 'N') << 8) + (auint)( 'a'),
+ ((auint)( 'm') << 8) + (auint)( 'e'),
+ ((auint)( ':') << 8) + (auint)( ' '),
+ ((auint)('\n') << 8) + (auint)( 'V'),
+ ((auint)( 'e') << 8) + (auint)( 'r'),
+ ((auint)( 's') << 8) + (auint)( 'i'),
+ ((auint)( 'o') << 8) + (auint)( 'n'),
+ ((auint)( ':') << 8) + (auint)( ' '),
+ ((auint)('\n') << 8) + (auint)( 'E'),
+ ((auint)( 'n') << 8) + (auint)( 'g'),
+ ((auint)( 'S') << 8) + (auint)( 'p'),
+ ((auint)( 'e') << 8) + (auint)( 'c'),
+ ((auint)( ':') << 8) + (auint)( ' '),
+ ((auint)('\n') << 8) + (auint)( 'D'),
+ ((auint)( 'e') << 8) + (auint)( 's'),
+ ((auint)( 'c') << 8) + (auint)( 'O'),
+ ((auint)( 'f') << 8) + (auint)( 'f'),
+ ((auint)( ':') << 8) + (auint)( ' '),
+ ((auint)('\n') << 8) + (auint)( 'L'),
+ ((auint)( 'i') << 8) + (auint)( 'c'),
+ ((auint)( 'e') << 8) + (auint)( 'n'),
+ ((auint)( 's') << 8) + (auint)( 'e'),
+ ((auint)( ':') << 8) + (auint)( ' ')};
+
+/* Head autofill offsets */
+static const uint8 pass2_h_aoff[32] = {
+ 0x00U, 0x01U,                      /* RPA\n */
+ 0x02U, 0x03U, 0x04U, 0x05U, 0x06U, /* \nAppAuth: */
+ 0x0FU, 0x10U, 0x11U, 0x12U, 0x13U, /* \nAppName: */
+ 0x25U, 0x26U, 0x27U, 0x28U, 0x29U, /* \nVersion: */
+ 0x2FU, 0x30U, 0x31U, 0x32U, 0x33U, /* \nEngSpec: */
+ 0x39U, 0x3AU, 0x3BU, 0x3CU, 0x3DU, /* \nDescOff: */
+ 0x40U, 0x41U, 0x42U, 0x43U, 0x44U  /* \nLicense: */
+};
 
 
 
-/* Symbol table usage entry */
-typedef struct pass2_symu_s{
- auint  off;                 /* Offset of first word where it occurs */
- auint  use;                 /* Usage type */
- uint8  fil[FILE_MAX];       /* File name for fault */
- fault_off_t   fof;          /* Location of definition for fault */
- struct pass2_symu_s* nxt;
-}pass2_symu_t;
-
-
-/* Symbol table header */
-typedef struct{
- uint8  nam[SYMB_MAX];       /* Symbol name, padded with zeros */
- uint32 val;                 /* Value of symbol */
- auint  def;                 /* Nonzero (TRUE) if the symbol is defined (value is valid) */
- uint8  fil[FILE_MAX];       /* File name for fault */
- fault_off_t   fof;          /* Location of definition for fault */
- pass2_symu_t* use;          /* Usage list */
-}pass2_symt_t;
-
-
-
-static pass2_symt_t pass2_symt[SYMTABLE_SIZE]; /* Symbol table headers */
-static pass2_symu_t pass2_symu[SYMUSE_SIZE];   /* Symbol table usages */
-static auint        pass2_tcnt = 0U;           /* Number of symbols used */
-static auint        pass2_ucnt = 0U;           /* Number of usage table entries consumed */
-
-
-
-/* Finds a symbol in the symbol table. Returns the offset, or the current
-** size of the symbol table (pass2_tcnt) if not found. The compile state may
-** be NULL to ignore global extension. */
-static auint pass2_snfind(uint8 const* nam, compst_t* hnd)
+/* Retrieves ASCII uppercase hex digit of a number */
+static auint pass2_gethex(auint num, auint dig)
 {
- auint i;
- for (i = 0U; i < pass2_tcnt; i++){
-  if (compst_issymequ(hnd, nam, &(pass2_symt[i].nam[0]))){ break; }
- }
- return i;
+ num >>= (dig << 2);
+ num  &= 0xFU;
+ if (num < 10U){ return (num + (auint)('0')); }
+ else          { return (num + (auint)('A') - 10U); }
 }
 
 
 
-/* Executes the second pass. Takes the application header & code ROM prepared
-** by the first pass, then using the internally generated symbol table it
-** attempts to substitue symbols so a complete header & code ROM is produced
-** and returned. Returns nonzero (TRUE) if failed (prints the reason of
-** failure on the console). The app. header is 4KWords, the code ROM is
-** 64KWords. */
-auint pass2_run(uint16* apph, uint16* crom)
+/* Executes the second pass. Finalizes the symbol table by adding section
+** bases and resolving it. Autofills the head and desc sections where
+** necessary to give the appropriate application binary structure. Returns
+** nonzero if failed, fault code printed. */
+auint pass2_run(symtab_t* stb)
 {
- uint8   s[80];
- auint   i;
- uint32  v;
- uint16 *p;
- pass2_symu_t* u;
+ uint8         s[80];
+ section_t*    sec = symtab_getsectob(stb);
+ compst_t*     cst = symtab_getcompst(stb);
+ auint         ssi[SECT_CNT]; /* Section sizes */
+ auint         sbs[SECT_CNT]; /* Section bases */
+ auint         i;
+ auint         t;
+ uint16 const* sdt;
 
- /* Go through all symbols */
- for (i = 0; i < pass2_tcnt; i++){
+ /* Autofill head and desc sections where necessary */
 
-  /* Check if symbol is defined, and produce a warning if not */
-  if ((pass2_symt[i].def == 0U) && (pass2_symt[i].use != NULL)){
-   snprintf((char*)(&s[0]), 80U, "Symbol %s is used, but not defined", (char const*)(&(pass2_symt[i].nam[0])));
-   fault_print(FAULT_WARN, &s[0], &(pass2_symt[i].fof));
-  }
+ /* Head elements (offset of desc remains unfilled for now) */
 
-  /* Substitue all it's occurences */
-  v = pass2_symt[i].val;
-  u = pass2_symt[i].use;
-  while (u != NULL){
-
-   if (((u->off) & VALWR_APPH) != 0){ p = apph; }     /* App header */
-   else                             { p = crom; }     /* Code */
-   if (valwr_write(p, v, u->off, u->use, &(u->fof))){ /* Failed? */
-    return 1U;                                        /* If so, exit, can't compile */
-   }
-
-   u = u->nxt;
-  }
-
+ section_setsect(sec, SECT_HEAD);
+ for (i = 0U; i < 32U; i++){
+  section_fsetw(sec, pass2_h_aoff[i], pass2_h_adat[i]);
+ }
+ for (i = 0U; i < 64U; i++){
+  section_strpad(sec, i);
+ }
+ if (section_getsize(sec) == 0x45U){ /* Nothing after "License: ", add some acceptable (no license) fill */
+  section_setoffw(sec, 0x45U);
+  if (section_pushw(sec, ((auint)('\n') << 8) + 0x00U) != 0U){ goto fault_sec; }
  }
 
- /* Everything could be compiled in, so OK */
+ /* Desc elements: Set up external stack, no input controllers, and the
+ ** simplest requirement flags if the descriptor has not got these. */
+
+ section_setsect(sec, SECT_DESC);
+ i = section_getsize(sec);
+ if (i < 0x09U){ section_fsetw(sec, 0x08U, 0x0000U); } /* Separate 32KWords stack */
+ if (i < 0x0BU){ section_fsetw(sec, 0x0AU, 0x0000U); } /* No input controllers */
+ if (i < 0x0CU){ section_fsetw(sec, 0x0BU, 0xCC00U); } /* Only has important A/V, multi-streaming */
+
+ /* Calculate section sizes */
+
+ for (i = 0U; i < SECT_CNT; i++){
+  section_setsect(sec, i);
+  ssi[i] = section_getsize(sec);
+ }
+
+ /* FILE section's size has to be calculated separately... (Will be here) */
+
+ /* Calculate section base offsets & submit their symbols. */
+
+ sbs[SECT_CODE] = 0U;
+ sbs[SECT_DATA] = 0x40U;
+ sbs[SECT_HEAD] = 0U;
+ sbs[SECT_DESC] = 0U;
+ sbs[SECT_ZERO] = 0x40U + ssi[SECT_DATA];
+ sbs[SECT_FILE] = ssi[SECT_HEAD] + ssi[SECT_DESC] + ssi[SECT_CODE] + ssi[SECT_DATA];
+
+ for (i = 0U; i < SECT_CNT; i++){
+  section_setsect(sec, i);
+  section_setbase(sec, sbs[i]);
+  t = symtab_addsymdef(stb, SYMTAB_CMD_MOV, sbs[i], NULL, 0U, NULL);
+  if (t == 0U){ goto fault_oth; }
+  t = symtab_bind(stb, section_getsbstr(i), t);
+  if (t != 0U){ goto fault_oth; }
+ }
+
+ /* Check section size constraints */
+
+ if ((ssi[SECT_DATA] + ssi[SECT_ZERO]) > SECT_MAXRAM){ goto fault_mxr; }
+ if ((ssi[SECT_HEAD] + ssi[SECT_DESC]) > 0x10000U){    goto fault_hea; }
+
+ /* Fill in Application Descriptor elements defining the positions of sections
+ ** within the binary. */
+
+ section_setsect(sec, SECT_HEAD);
+ t = ssi[SECT_HEAD]; /* Position of Application Descriptor */
+ section_fsetw(sec, 0x3EU, (pass2_gethex(t, 3) << 8) + pass2_gethex(t, 2));
+ section_fsetw(sec, 0x3FU, (pass2_gethex(t, 1) << 8) + pass2_gethex(t, 0));
+
+ section_setsect(sec, SECT_DESC);
+ t = sbs[SECT_FILE] + ssi[SECT_FILE]; /* Total size of the file */
+ section_fsetw(sec, 0x00U, t >> 16);
+ section_fsetw(sec, 0x01U, t & 0xFFFFU);
+ t = ssi[SECT_HEAD] + ssi[SECT_DESC]; /* Word offset of code */
+ section_fsetw(sec, 0x02U, t >> 16);
+ section_fsetw(sec, 0x03U, t & 0xFFFFU);
+ t = ssi[SECT_HEAD] + ssi[SECT_DESC] + ssi[SECT_CODE]; /* Word offset of data */
+ section_fsetw(sec, 0x04U, t >> 16);
+ section_fsetw(sec, 0x05U, t & 0xFFFFU);
+ t = ssi[SECT_CODE];                  /* Count of code words */
+ section_fsetw(sec, 0x06U, t & 0xFFFFU); /* (0: 64KWords) */
+ t = ssi[SECT_DATA];                  /* Count of data words */
+ section_fsetw(sec, 0x07U, t & 0xFFFFU);
+
+ /* Resolve symbols */
+
+ if (symtab_resolve(stb)){ goto fault_oth; }
+
+ /* Done */
+
  return 0U;
-}
 
+fault_hea:
 
+ snprintf((char*)(&s[0]), 80U, "Application Header too large (%04X words)", ssi[SECT_HEAD]);
+ fault_printgen(FAULT_FAIL, &s[0]);
+ return 1U;
 
-/* Clears all pass2 state (this is the symbol table). Initially the state is
-** cleared. */
-void  pass2_clear(void)
-{
- pass2_tcnt = 0U;
- pass2_ucnt = 0U;
-}
+fault_mxr:
 
+ snprintf((char*)(&s[0]), 80U, "CPU RAM limit (%04X words) overran", SECT_MAXRAM);
+ fault_printgen(FAULT_FAIL, &s[0]);
+ return 1U;
 
+fault_sec:
 
-/* Creates new symbol at the end of the symbol table if possible. Returns
-** nonzero (TRUE) if it is not possible, faults properly reported. Needs valid
-** compile state. */
-static auint pass2_crsym(uint8 const* nam, compst_t* hnd)
-{
- uint8 s[80];
+ snprintf((char*)(&s[0]), 80U, "Unable to autofill header");
+ fault_printgen(FAULT_FAIL, &s[0]);
+ return 1U;
 
- if (pass2_tcnt == SYMTABLE_SIZE){
-  snprintf((char*)(&s[0]), 80U, "Can not add symbol %s since table is full", (char const*)(nam));
-  fault_printat(FAULT_FAIL, &s[0], hnd);
-  return 1U;
- }
- if (compst_copysym(hnd, &(pass2_symt[pass2_tcnt].nam[0]), nam) == (SYMB_MAX - 1U)){
-  snprintf((char*)(&s[0]), 80U, "Symbol %s might be too long", (char const*)(nam));
-  fault_printat(FAULT_NOTE, &s[0], hnd);
- }
- pass2_symt[pass2_tcnt].def = 0U;
- pass2_symt[pass2_tcnt].val = 0U; /* Undefined symbols should be substitued to zero */
- pass2_symt[pass2_tcnt].use = NULL;
- pass2_tcnt++;
- return 0U;
-}
+fault_oth:
 
-
-
-/* Adds a symbol value (definition) to the symbol table. Prints a fault if it
-** is not possible for the symbol table being full. The symbol name can be
-** discarded after addition. The name can be provided as text pointer into
-** source fragment. */
-void  pass2_addsymval(uint8 const* nam, uint32 val, compst_t* hnd)
-{
- auint i;
- uint8 s[80];
-
- /* Try to find name in the table. If the symbol already had usages, it will
- ** be found (also will be found if it was already defined). */
- i = pass2_snfind(nam, hnd);
- if (i < pass2_tcnt){
-  if (pass2_symt[i].def){ /* Symbol already defined - warning! */
-   snprintf((char*)(&s[0]), 80U, "Redefinition of symbol %s", (char const*)(nam));
-   fault_printat(FAULT_WARN, &s[0], hnd);
-   snprintf((char*)(&s[0]), 80U, "Location of previous definition");
-   fault_print(FAULT_NOTE, &s[0], &(pass2_symt[i].fof));
-  }
- }else{
-  if (pass2_crsym(nam, hnd)){ return; }
- }
-
- /* Add the symbol value & offset */
- pass2_symt[i].val = val;
- pass2_symt[i].def = 1U;
- fault_fofget(&(pass2_symt[i].fof), hnd, &(pass2_symt[i].fil[0]));
-}
-
-
-
-/* Retrieves symbol value if any. Returns nonzero (TRUE) if the symbol is
-** defined, and fills val in, zero (FALSE) otherwise, setting val zero. The
-** name can be provided as text pointer into source fragment. */
-auint pass2_getsymval(uint8 const* nam, uint32* val, compst_t* hnd)
-{
- auint i;
-
- /* Try to find name in the table. If the symbol already had usages or is
- ** really defined, it will be found. */
- i = pass2_snfind(nam, hnd);
- if (i < pass2_tcnt){
-  if (pass2_symt[i].def){ /* Symbol defined, so return */
-   *val = pass2_symt[i].val;
-   return 1U;
-  }
- }
-
- *val = 0U;
- return 0U; /* Symbol not defined */
-}
-
-
-
-/* Adds a symbol usage to the symbol table. The off and use parameters are
-** formed according to valwr_write(). The name can be provided as text pointer
-** into source fragment. */
-void  pass2_addsymuse(uint8 const* nam, auint off, auint use, compst_t* hnd)
-{
- auint i;
- uint8 s[80];
-
- /* Try to find name in the table. If the symbol already had usages or is
- ** really defined, it will be found. */
- i = pass2_snfind(nam, hnd);
- if (i == pass2_tcnt){ /* Symbol not found - need to create it */
-  if (pass2_crsym(nam, hnd)){ return; }
- }
-
- /* Try to add new usage. */
- if (pass2_ucnt == SYMUSE_SIZE){
-  snprintf((char*)(&s[0]), 80U, "Can not add symbol %s since table is full", (char const*)(nam));
-  fault_printat(FAULT_FAIL, &s[0], hnd);
-  return;
- }
- pass2_symu[pass2_ucnt].off = off;
- pass2_symu[pass2_ucnt].use = use;
- pass2_symu[pass2_ucnt].nxt = pass2_symt[i].use;
- pass2_symt[i].use = &(pass2_symu[pass2_ucnt]);
- fault_fofget(&(pass2_symu[pass2_ucnt].fof), hnd, &(pass2_symu[pass2_ucnt].fil[0]));
- pass2_ucnt++;
-
- /* If the symbol is undefined, add the current location as it's fault offset.
- ** So if it remains undefined, some offset may be printed to help looking
- ** for the problem. */
- if (pass2_symt[i].def == 0U){
-  fault_fofget(&(pass2_symt[i].fof), hnd, &(pass2_symt[i].fil[0]));
- }
+ return 1U;
 }
