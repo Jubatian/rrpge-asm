@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.21
 */
 
 
@@ -145,6 +145,8 @@ void  compst_setgsym(compst_t* hnd, uint8 const* src)
 void  compst_setfile(compst_t* hnd, uint8 const* src)
 {
  strpr_copy(&(hnd->fil[0]), src, FILE_MAX);
+ hnd->lin = 0U;
+ hnd->chr = 0U;
 }
 
 
@@ -162,6 +164,7 @@ uint8 const* compst_getfile(compst_t* hnd)
 void  compst_setline(compst_t* hnd, auint lin)
 {
  hnd->lin = lin;
+ hnd->chr = 0U;
 }
 
 
@@ -206,6 +209,7 @@ auint compst_getcoff(compst_t* hnd)
 void  compst_setsstr(compst_t* hnd, uint8 const* src)
 {
  strpr_copy(&(hnd->sls[0]), src, LINE_MAX);
+ hnd->chr = 0U;
 }
 
 
