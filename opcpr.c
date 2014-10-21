@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.21
 */
 
 
@@ -791,8 +791,8 @@ fault_ps6:
 ** to write into the passed code memory block, and increments the offset
 ** afterwards. While processing it also deals with any symbol or literal
 ** encountered, encodes them or submits them to pass2 as needed. Generates and
-** outputs faults where necessary. Returns nonzero (TRUE) on any serious fault
-** where the compilation should stop. */
+** outputs faults where necessary. Returns one of the defined PARSER return
+** codes (defined in types.h). */
 auint opcpr_proc(symtab_t* stb)
 {
  uint8        s[80];
@@ -800,15 +800,16 @@ auint opcpr_proc(symtab_t* stb)
  compst_t*    cst = symtab_getcompst(stb);
  uint8 const* src = compst_getsstrcoff(cst);
  auint        beg = strpr_nextnw(src, 0U);
+ auint        r;
 
  if (section_getsect(sec) != SECT_CODE){
   snprintf((char*)(&s[0]), 80U, "Probable code in non code section");
   fault_printat(FAULT_FAIL, &s[0], cst);
-  return 1U;
+  return PARSER_ERR;
  }
 
  if (strpr_isend(src[beg])){
-  return 0U;            /* No content on this line */
+  return PARSER_END; /* No content on this line */
  }
 
  /* Encode opcodes */
@@ -816,184 +817,187 @@ auint opcpr_proc(symtab_t* stb)
  if       (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("add"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, OPCPR_CY | OPCPR_SW, 0x0800U);
+  r = opcpr_aops(stb, OPCPR_CY | OPCPR_SW, 0x0800U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("adc"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, OPCPR_CY, 0x1800U);
+  r = opcpr_aops(stb, OPCPR_CY, 0x1800U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("and"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, 0U, 0x4400U);
+  r = opcpr_aops(stb, 0U, 0x4400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("asr"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, OPCPR_CY, 0x3400U);
+  r = opcpr_aops(stb, OPCPR_CY, 0x3400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("btc"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_bops(stb, 0xA000U);
+  r = opcpr_bops(stb, 0xA000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("bts"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_bops(stb, 0xA800U);
+  r = opcpr_bops(stb, 0xA800U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("div"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, OPCPR_CY, 0x1400U);
+  r = opcpr_aops(stb, OPCPR_CY, 0x1400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jfr"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_cops(stb, 0U, 0x8800U);
+  r = opcpr_cops(stb, 0U, 0x8800U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jfa"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_cops(stb, 0U, 0x8900U);
+  r = opcpr_cops(stb, 0U, 0x8900U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jmr"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_jops(stb, 0x8C00U);
+  r = opcpr_jops(stb, 0x8C00U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jma"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_jops(stb, 0x8D00U);
+  r = opcpr_jops(stb, 0x8D00U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jms"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_rops(stb, 0x8400U);
+  r = opcpr_rops(stb, 0x8400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jsv"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_cops(stb, 1U, 0x8880U);
+  r = opcpr_cops(stb, 1U, 0x8880U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("mac"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, OPCPR_CY, 0x3000U);
+  r = opcpr_aops(stb, OPCPR_CY, 0x3000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("mov"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, OPCPR_CY | OPCPR_XM | OPCPR_X4 | OPCPR_SR | OPCPR_SW, 0x0000U);
+  r = opcpr_aops(stb, OPCPR_CY | OPCPR_XM | OPCPR_X4 | OPCPR_SR | OPCPR_SW, 0x0000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("mul"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, OPCPR_CY, 0x2000U);
+  r = opcpr_aops(stb, OPCPR_CY, 0x2000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("neg"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, 0U, 0x6400U);
+  r = opcpr_aops(stb, 0U, 0x6400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("nop"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_nops(stb, 0xC000U);
+  r = opcpr_nops(stb, 0xC000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("not"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, 0U, 0x2400U);
+  r = opcpr_aops(stb, 0U, 0x2400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("or" ))){
 
   compst_setcoffrel(cst, beg + 2U);
-  return !opcpr_aops(stb, 0U, 0x4000U);
+  r = opcpr_aops(stb, 0U, 0x4000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("rfn"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_nops(stb, 0x8980U);
+  r = opcpr_nops(stb, 0x8980U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("sbc"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, OPCPR_CY, 0x1C00U);
+  r = opcpr_aops(stb, OPCPR_CY, 0x1C00U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("shl"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, OPCPR_CY, 0x2800U);
+  r = opcpr_aops(stb, OPCPR_CY, 0x2800U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("shr"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, OPCPR_CY, 0x2C00U);
+  r = opcpr_aops(stb, OPCPR_CY, 0x2C00U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("slc"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, OPCPR_CY, 0x3800U);
+  r = opcpr_aops(stb, OPCPR_CY, 0x3800U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("src"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, OPCPR_CY, 0x3C00U);
+  r = opcpr_aops(stb, OPCPR_CY, 0x3C00U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("sub"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, OPCPR_CY, 0x0C00U);
+  r = opcpr_aops(stb, OPCPR_CY, 0x0C00U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xbc"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_bops(stb, 0xA400U);
+  r = opcpr_bops(stb, 0xA400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xbs"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_bops(stb, 0xAC00U);
+  r = opcpr_bops(stb, 0xAC00U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xch"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, 0U, 0x1000U);
+  r = opcpr_aops(stb, 0U, 0x1000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xeq"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, 0U, 0xB000U);
+  r = opcpr_aops(stb, 0U, 0xB000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xne"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, 0U, 0xB800U);
+  r = opcpr_aops(stb, 0U, 0xB800U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xor"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, 0U, 0x5000U);
+  r = opcpr_aops(stb, 0U, 0x5000U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xsg"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, 0U, 0xB400U);
+  r = opcpr_aops(stb, 0U, 0xB400U);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xug"))){
 
   compst_setcoffrel(cst, beg + 3U);
-  return !opcpr_aops(stb, 0U, 0xBC00U);
+  r = opcpr_aops(stb, 0U, 0xBC00U);
 
  }else{
 
   compst_setcoffrel(cst, beg);
   snprintf((char*)(&s[0]), 80U, "Invalid opcode");
   fault_printat(FAULT_FAIL, &s[0], cst);
-  return 1U;
+  r = 0U;
 
  }
+
+ if (r != 0U){ return PARSER_END; }
+ else        { return PARSER_ERR; }
 }

@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.21
 */
 
 
@@ -25,10 +25,6 @@
 #define LITPR_UND 2U
 #define LITPR_STR 4U
 #define LITPR_INV 0U
-
-/* Additional litpr_symdefproc() outcomes (LITPR_INV is shared) */
-#define LITPR_EQU 1U
-#define LITPR_LBL 2U
 
 
 /* Tries to interpret and retrieve value of a literal in the given string. The
@@ -52,23 +48,9 @@ auint litpr_getval(uint8 const* src, auint* len, auint* val, symtab_t* stb);
 
 /* Checks for symbol definition on the beginning of the current line. If a
 ** valid symbol definition is found (either line label or equ) it is
-** submitted to the symbol table as new symbol value. The following outcomes
-** are possible:
-**
-** LITPR_EQU: An 'equ'. The line is processed appropriately, creating symbol
-**            table entries if necessary.
-** LITPR_LBL: A label. In 'len' the source string position after the ':' is
-**            returned. An symbol aggregate appropriate to the section type
-**            ('$.code', '$.data', '$.head', '$.desc', '$.zero' or '$.file')
-**            is created in the symbol table.
-** LITPR_INV: An error was encountered during processing, fault code was
-**            printed.
-**
-** In the case of LITPR_LBL, the line should be processed further from the
-** position returned in 'len'. If there is no processable content on the line,
-** LITPR_LBL is returned with 'len' set to zero, so other processors may pick
-** up working with the line. */
-auint litpr_symdefproc(auint* len, symtab_t* stb);
+** submitted to the symbol table as new symbol value. Returns one of the
+** defined PARSER return codes (defined in types.h). */
+auint litpr_symdefproc(symtab_t* stb);
 
 
 #endif

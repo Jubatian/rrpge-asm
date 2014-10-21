@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.21
 */
 
 
@@ -22,11 +22,7 @@
 ** 'ds', 'db' or 'dw'.
 ** 'org'.
 ** 'section'.
-** Provides the following returns:
-** 0: Fault, compilation should stop, fault printed.
-** 1: Succesfully parsed something.
-** 2: No content usable, but other parsers may try.
-** In the case of data allocations, also checks and reports overlaps. Note
+** Returns one of the defined PARSER return codes (defined in types.h). Note
 ** that it starts parsing the line at the last set char. position, so this way
 ** labels may be skipped (processed earlier using litpr_symdefproc()). */
 auint ps1sup_parsmisc(symtab_t* stb)
@@ -43,7 +39,7 @@ auint ps1sup_parsmisc(symtab_t* stb)
  section_t*   sec = symtab_getsectob(stb);
 
  if (strpr_isend(src[beg])){
-  return 1U;            /* No content on this line, so processed succesful */
+  return PARSER_END; /* No content on this line, so processed succesful */
  }
 
 
@@ -74,7 +70,7 @@ auint ps1sup_parsmisc(symtab_t* stb)
 
   beg = strpr_nextnw(src, beg + 4U); /* End of string? */
   if (!strpr_isend(src[beg])){ goto fault_ins; }
-  return 1U;                         /* All OK, section encoded */
+  return PARSER_END;                 /* All OK, section encoded */
 
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("org"))){
@@ -90,7 +86,7 @@ auint ps1sup_parsmisc(symtab_t* stb)
 
   beg = beg + u;                     /* End of string? */
   if (!strpr_isend(src[beg])){ goto fault_ins; }
-  return 1U;                         /* All OK, origin encoded */
+  return PARSER_END;                 /* All OK, origin encoded */
 
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("ds"))){
@@ -111,7 +107,7 @@ auint ps1sup_parsmisc(symtab_t* stb)
 
   beg = beg + u;                     /* End of string? */
   if (!strpr_isend(src[beg])){ goto fault_ind; }
-  return 1U;
+  return PARSER_END;
 
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("db"))){
@@ -157,7 +153,7 @@ auint ps1sup_parsmisc(symtab_t* stb)
   }
 
   /* Note: No need to check string end here since it is done above */
-  return 1U;
+  return PARSER_END;
 
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("dw"))){
@@ -190,13 +186,13 @@ auint ps1sup_parsmisc(symtab_t* stb)
   }
 
   /* Note: No need to check string end here since it is done above */
-  return 1U;
+  return PARSER_END;
 
 
  }else{
 
   /* Some other type of content, maybe opcode. Not processed */
-  return 2U;
+  return PARSER_OK;
  }
 
 
@@ -205,51 +201,51 @@ fault_ins:
  compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "Malformed section specification");
  fault_printat(FAULT_FAIL, &s[0], hnd);
- return 0U;
+ return PARSER_ERR;
 
 fault_ino:
 
  compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "Malformed origin");
  fault_printat(FAULT_FAIL, &s[0], hnd);
- return 0U;
+ return PARSER_ERR;
 
 fault_dsz:
 
  compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "\'ds\' is only allowed in zero section");
  fault_printat(FAULT_FAIL, &s[0], hnd);
- return 0U;
+ return PARSER_ERR;
 
 fault_ind:
 
  compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "Malformed \'ds\'");
  fault_printat(FAULT_FAIL, &s[0], hnd);
- return 0U;
+ return PARSER_ERR;
 
 fault_dxs:
 
  compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "\'db\' or \'dw\' is only allowed in code, data, head or desc");
  fault_printat(FAULT_FAIL, &s[0], hnd);
- return 0U;
+ return PARSER_ERR;
 
 fault_inx:
 
  compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "Malformed \'db\' or \'dw\'");
  fault_printat(FAULT_FAIL, &s[0], hnd);
- return 0U;
+ return PARSER_ERR;
 
 fault_ovr:
 
  compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "Overlap or out of section encountered");
  fault_printat(FAULT_FAIL, &s[0], hnd);
- return 0U;
+ return PARSER_ERR;
 
 fault_oth:
 
- return 0U;
+ return PARSER_ERR;
 }

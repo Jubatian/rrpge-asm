@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.21
 */
 
 
@@ -166,23 +166,9 @@ end_fault:
 
 /* Checks for symbol definition on the beginning of the current line. If a
 ** valid symbol definition is found (either line label or equ) it is
-** submitted to the symbol table as new symbol value. The following outcomes
-** are possible:
-**
-** LITPR_EQU: An 'equ'. The line is processed appropriately, creating symbol
-**            table entries if necessary.
-** LITPR_LBL: A label. In 'len' the source string position after the ':' is
-**            returned. An symbol aggregate appropriate to the section type
-**            ('$.code', '$.data', '$.head', '$.desc', '$.zero' or '$.file')
-**            is created in the symbol table.
-** LITPR_INV: An error was encountered during processing, fault code was
-**            printed.
-**
-** In the case of LITPR_LBL, the line should be processed further from the
-** position returned in 'len'. If there is no processable content on the line,
-** LITPR_LBL is returned with 'len' set to zero, so other processors may pick
-** up working with the line. */
-auint litpr_symdefproc(auint* len, symtab_t* stb)
+** submitted to the symbol table as new symbol value. Returns one of the
+** defined PARSER return codes (defined in types.h). */
+auint litpr_symdefproc(symtab_t* stb)
 {
  auint  i;
  auint  r;
@@ -192,13 +178,12 @@ auint litpr_symdefproc(auint* len, symtab_t* stb)
  compst_t*  cst = symtab_getcompst(stb);
  section_t* sec = symtab_getsectob(stb);
 
- *len = 0U; /* No processable content case */
- s = compst_getsstr(cst);
+ s = compst_getsstrcoff(cst);
 
  i = 0U;
  while (strpr_issym(s[i])){ i++; }
 
- if (i == 0U){ return LITPR_LBL; } /* No symbol here */
+ if (i == 0U){ return PARSER_OK; } /* No symbol here */
 
  /* Check for ':' or 'equ' */
 
@@ -206,14 +191,14 @@ auint litpr_symdefproc(auint* len, symtab_t* stb)
 
  if (s[i] == ':'){   /* Line label: the symbol's value is the offset */
   compst_setgsym(cst, &s[0]);      /* Add global symbol (if it is global) */
-  *len = i + 1U;
+  compst_setcoffrel(cst, i + 1U);
   i = symtab_addsymdef(stb, SYMTAB_CMD_ADD | SYMTAB_CMD_S1N,
                        section_getoffw(sec), NULL,
                        0U, section_getsbstr[section_getsect(sec)]);
-  if (i == 0U){ return LITPR_INV; }
+  if (i == 0U){ goto fault_ot1; }
   i = symtab_bind(stb, &s[0], i);
-  if (i == 0U){ return LITPR_INV; }
-  return LITPR_LBL;  /* OK, found, added, done */
+  if (i == 0U){ goto fault_ot1; }
+  return PARSER_OK;  /* OK, found, added, done */
  }
 
  if (compst_issymequ(NULL, &(s[i]), (uint8 const*)("equ"))){
@@ -221,17 +206,21 @@ auint litpr_symdefproc(auint* len, symtab_t* stb)
   r = litpr_getval(&s[i], &t, &v, stb);
   if ((r & LITPR_VAL) != 0U){      /* Valid literal, so can be stored */
    v = symtab_addsymdef(stb, SYMTAB_CMD_MOV, v, NULL, 0U, NULL);
-   if (v == 0U){ return LITPR_INV; }
+   if (v == 0U){ goto fault_ot1; }
   }
   if ( ((r & LITPR_VAL) != 0U)
        ((r & LITPR_UND) != 0U) ){  /* Valid literal or symbol aggregate */
    i = symtab_bind(stb, &s[0], v);
-   if (i == 0U){ return LITPR_INV; }
-   return LITPR_EQU;
+   if (i == 0U){ goto fault_ot1; }
+   return PARSER_END;
   }
  }
 
  /* No parseable label or equ found: maybe something else will parse it */
 
- return LITPR_LBL;
+ return PARSER_OK;
+
+fault_ot1:
+
+ return PARSER_ERR;
 }

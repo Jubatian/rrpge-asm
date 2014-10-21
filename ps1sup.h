@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.21
 */
 
 
@@ -24,11 +24,7 @@
 ** 'ds', 'db' or 'dw'.
 ** 'org'.
 ** 'section'.
-** Provides the following returns:
-** 0: Fault, compilation should stop, fault printed.
-** 1: Succesfully parsed something.
-** 2: No content usable, but other parsers may try.
-** In the case of data allocations, also checks and reports overlaps. Note
+** Returns one of the defined PARSER return codes (defined in types.h). Note
 ** that it starts parsing the line at the last set char. position, so this way
 ** labels may be skipped (processed earlier using litpr_symdefproc()). */
 auint ps1sup_parsmisc(symtab_t* stb);

@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.20
 */
 
 
@@ -31,8 +31,17 @@ typedef   int8_t        sint8;
 typedef  uint8_t        uint8;
 
 
+/* Return codes for line parsers */
+/* Error during parse, fault printed, compilation must stop. */
+#define PARSER_ERR 0U
+/* Parse completed OK, other parsers in the sequence may continue. */
+#define PARSER_OK  1U
+/* Parse completed OK, end of line reached, parsing for the line should stop. */
+#define PARSER_END 2U
+
+
+/* Ugly hack for Windows: no strerror_r, so substitute it */
 #ifdef TARGET_WINDOWS_MINGW
-/* Ugly hack for Windows: no strerror_r, so substutute it */
 #define strerror_r(num, buf, len) strncpy(buf, strerror(num), len)
 #endif
 
