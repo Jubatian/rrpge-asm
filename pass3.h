@@ -6,10 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
-**
-**
-** This processes incbins building up the complete binary.
+**  \date      2014.10.22
 */
 
 
@@ -18,31 +15,14 @@
 
 
 #include "types.h"
-#include "compst.h"
+#include "bindata.h"
+#include "symtab.h"
 
 
-/* Executes the third pass. Takes the file descriptor of the output binary and
-** populates it beginning from it's current seek position (so it has to be
-** positioned beforehands!) page by page with the binary data acquired from
-** incbins, listed in an internal structure (it processes application header
-** incbins in a seperate pass after this). Returns nonzero (TRUE) if failed
-** printing the reason of failure. When populating the app. header it also
-** checks for collisions, using the app. header usage map. The last parameter
-** is the count of binary pages, used for checking and padding the binary. */
-auint pass3_run(FILE* obi, uint32 const* aphu, auint bpages);
-
-
-/* Clears all pass3 state */
-void  pass3_clear(void);
-
-
-/* Checks current source line at current position for a valid bindata include.
-** If so, it is submitted to the internal bindata list for pass3. Provides the
-** following returns:
-** 0: Fault, compilation should stop, fault printed.
-** 1: Succesfully parsed something.
-** 2: No content usable, but other parsers may try. */
-auint pass3_procbindata(compst_t* hnd);
+/* Executes the third pass. This combines the application components prepared
+** in pass 2 with the FILE section binary data blocks into a new application
+** binary file. Returns nonzero on failure. */
+auint pass3_run(FILE* obi, symtab_t* stb, bindata_t* bdt);
 
 
 #endif
