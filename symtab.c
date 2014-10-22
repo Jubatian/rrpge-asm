@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.22
 */
 
 
@@ -65,7 +65,7 @@ static symtab_def_t symtab_def[SYMTAB_DEF_SIZE];
 static symtab_use_t symtab_use[SYMTAB_USE_SIZE];
 static uint8        symtab_str[SYMTAB_STR_SIZE];
 static symtab_t     symtab_tab = {
- NULL,
+ NULL, NULL,
  symtab_def, 0U, SYMTAB_DEF_SIZE,
  symtab_use, 0U, SYMTAB_USE_SIZE,
  symtab_str, 0U, SYMTAB_STR_SIZE};
