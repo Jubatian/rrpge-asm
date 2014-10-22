@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.22
 **
 **
 ** Short usage summary:
@@ -19,8 +19,8 @@
 
 
 #include "types.h"
-#include "typec.h"
-#include "compst.h"
+#include "symtab.h"
+#include "bindata.h"
 #include "firead.h"
 #include "pass1.h"
 #include "pass2.h"
@@ -28,20 +28,16 @@
 
 
 
-/* Compiler output data, for receiving data from pass1 */
-static compout_t compout;
-
-
 int main(int argc, char** argv)
 {
- uint8     s[80];
- uint8     serrn[80];
- FILE*     fp;
- FILE*     of;
- compst_t* cst = compst_getobj();
- auint     i;
- auint     n;
- uint8     c;
+ uint8      s[80];
+ uint8      e[80];
+ FILE*      fp;
+ FILE*      of;
+ compst_t*  cst = compst_getobj();
+ section_t* sec = section_getobj();
+ symtab_t*  stb = symtab_getobj();
+ bindata_t* bdt = bindata_getobj();
 
 
  /* Welcome message (should be here) */
@@ -51,6 +47,9 @@ int main(int argc, char** argv)
  /* Initialize */
 
  compst_init(cst);
+ section_init(sec);
+ symtab_init(stb, sec, cst);
+ bindata_init(bdt);
 
  /* Open destination file */
 
@@ -68,43 +67,19 @@ int main(int argc, char** argv)
  /* Pass1 */
 
  printf("Compilation pass1\n");
- memset(&compout, 0U, sizeof(compout));
- i = pass1_run(fp, &compout, cst);
+ i = pass1_run(fp, stb, bdt);
  firead_close(fp);
  if (i){ goto fault_oth; }
 
  /* Pass2 */
 
  printf("Compilation pass2\n");
- if (pass2_run(&(compout.cons[0]), &(compout.code[0]))){ goto fault_oth; }
-
- /* Check generated application type & write destination */
-
- printf("Preparing application binary\n");
- if ((compout.conu[0xBC0U >> 5] & 0x001FU) != 0x001FU){ goto fault_una; }
- n = (((compout.cons[0xBC2U] >> 8) - 1U) & 0xFU) + 1U;
- for (i = (n << 7); i < (16U << 7); i++){
-  if (compout.codu[i] != 0U){ goto fault_cex; }
- }
- for (i = 0U; i < 0x1000U; i++){
-  c = (uint8)(compout.cons[i] >> 8);
-  if (fwrite(&c, 1U, 1U, of) != 1U){ goto fault_wrt; }
-  c = (uint8)(compout.cons[i] & 0xFFU);
-  if (fwrite(&c, 1U, 1U, of) != 1U){ goto fault_wrt; }
- }
- for (i = 0U; i < (n * 0x1000U); i++){
-  c = (uint8)(compout.code[i] >> 8);
-  if (fwrite(&c, 1U, 1U, of) != 1U){ goto fault_wrt; }
-  c = (uint8)(compout.code[i] & 0xFFU);
-  if (fwrite(&c, 1U, 1U, of) != 1U){ goto fault_wrt; }
- }
+ if (pass2_run(stb)){ goto fault_oth; }
 
  /* Pass3 */
 
  printf("Compilation pass3\n");
- i = ((auint)(compout.cons[0xBC2U] & 0xFFU) << 16) +
-     ((auint)(compout.cons[0xBC3U] & 0xFFU)); /* Page count may trip over a 32bit system, let it pass for now */
- if (pass3_run(of, &(compout.conu[0]), i)){ goto fault_oth; }
+ if (pass3_run(of, stb, bdt)){ goto fault_oth; }
 
  /* Done, try to close file and be happy */
 
@@ -114,42 +89,19 @@ int main(int argc, char** argv)
  return 0U;
 
 
-fault_wrt:
-
- strerror_r(errno, (char*)(&serrn[0]), 80U);
- serrn[79] = 0U;
- fclose(fp);
- snprintf((char*)(&s[0]), 80U, "Failed to write target binary: %s", (char const*)(&serrn[0]));
- fault_printat(FAULT_FAIL, &s[0], cst);
- return 1U;
-
-fault_cex:
-
- fclose(of);
- snprintf((char*)(&s[0]), 80U, "Allocated code area exceed (check 0xBC2)");
- fault_printat(FAULT_FAIL, &s[0], cst);
- return 1U;
-
-fault_una:
-
- fclose(of);
- snprintf((char*)(&s[0]), 80U, "App. definition area unpopulated (0xBC0 - 0xBC4)");
- fault_printat(FAULT_FAIL, &s[0], cst);
- return 1U;
-
 fault_ofc:
 
- strerror_r(errno, (char*)(&serrn[0]), 80U);
- serrn[79] = 0U;
- snprintf((char*)(&s[0]), 80U, "Failed to close \'app.rpa\': %s", (char const*)(&serrn[0]));
+ strerror_r(errno, (char*)(&e[0]), 80U);
+ e[79] = 0U;
+ snprintf((char*)(&s[0]), 80U, "Failed to close \'app.rpa\': %s", (char const*)(&e[0]));
  fault_printat(FAULT_FAIL, &s[0], cst);
  return 1U;
 
 fault_ofo:
 
- strerror_r(errno, (char*)(&serrn[0]), 80U);
- serrn[79] = 0U;
- snprintf((char*)(&s[0]), 80U, "Failed to open \'app.rpa\': %s", (char const*)(&serrn[0]));
+ strerror_r(errno, (char*)(&e[0]), 80U);
+ e[79] = 0U;
+ snprintf((char*)(&s[0]), 80U, "Failed to open \'app.rpa\': %s", (char const*)(&e[0]));
  fault_printat(FAULT_FAIL, &s[0], cst);
  return 1U;
 
