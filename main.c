@@ -52,11 +52,6 @@ int main(int argc, char** argv)
  symtab_init(stb, sec, cst);
  bindata_init(bdt);
 
- /* Open destination file */
-
- of = fopen("app.rpa", "wb");
- if (of == NULL){ goto fault_ofo; }
-
  /* Open source file */
 
  if (argc > 1){
@@ -80,7 +75,9 @@ int main(int argc, char** argv)
  /* Pass3 */
 
  printf("Compilation pass3\n");
- if (pass3_run(of, stb, bdt)){ goto fault_oth; }
+ of = fopen("app.rpa", "wb"); /* Open destination file */
+ if (of == NULL){ goto fault_ofo; }
+ if (pass3_run(of, stb, bdt)){ fclose(of); goto fault_oth; }
 
  /* Done, try to close file and be happy */
 
@@ -88,7 +85,6 @@ int main(int argc, char** argv)
  if (fclose(of)){ goto fault_ofc; }
 
  return 0U;
-
 
 fault_ofc:
 
@@ -108,7 +104,5 @@ fault_ofo:
 
 fault_oth:
 
- fclose(of);
  return 1U;
-
 }

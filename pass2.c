@@ -142,6 +142,7 @@ auint pass2_run(symtab_t* stb)
 
  if ((ssi[SECT_DATA] + ssi[SECT_ZERO]) > SECT_MAXRAM){ goto fault_mxr; }
  if ((ssi[SECT_HEAD] + ssi[SECT_DESC]) > 0x10000U){    goto fault_hea; }
+ if ( ssi[SECT_CODE]                   == 0U){         goto fault_ncd; }
 
  /* Fill in Application Descriptor elements defining the positions of sections
  ** within the binary. */
@@ -173,6 +174,12 @@ auint pass2_run(symtab_t* stb)
  /* Done */
 
  return 0U;
+
+fault_ncd:
+
+ snprintf((char*)(&s[0]), 80U, "No code");
+ fault_printgen(FAULT_FAIL, &s[0]);
+ return 1U;
 
 fault_hea:
 

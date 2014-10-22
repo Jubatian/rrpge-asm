@@ -426,7 +426,8 @@ fault_ot3:
 auint symtab_resolve(symtab_t* hnd)
 {
  uint8 s[80];
- auint i; /* GCC Bug: The compiler may improperly report this variable to be used uninitialized */
+ auint i;
+ auint dum;
  auint j;
  auint t;
  symtab_use_t* use = hnd->use;
@@ -441,7 +442,7 @@ auint symtab_resolve(symtab_t* hnd)
    t = def[j].s0i;
    for (i = 1U; i < dct; i++){
     if ((def[i].bdi) == t){
-     def[j].s0i = t;
+     def[j].s0i = i;
      break;
     }
    }
@@ -452,7 +453,7 @@ auint symtab_resolve(symtab_t* hnd)
    t = def[j].s1i;
    for (i = 1U; i < dct; i++){
     if ((def[i].bdi) == t){
-     def[j].s1i = t;
+     def[j].s1i = i;
      break;
     }
    }
@@ -464,8 +465,7 @@ auint symtab_resolve(symtab_t* hnd)
  /* Resolve all symbol definitions into MOVs */
 
  for (j = 1U; j < dct; j++){
-  i = 0U;
-  if (symtab_recres(def, j, 0U, &i)){ goto fault_ot4; }
+  if (symtab_recres(def, j, 0U, &dum)){ goto fault_ot4; }
  }
 
  /* Resolve symbol usages into the appropriate section:offset locations */

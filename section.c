@@ -143,6 +143,7 @@ uint8 const* section_getsbstr(auint sec)
 void  section_init(section_t* hnd)
 {
  memset(hnd, 0U, sizeof(section_t));
+ hnd->s = SECT_CODE; /* Select code section initially */
 }
 
 
@@ -367,7 +368,7 @@ auint section_getaddr(section_t* hnd, auint off)
 
 
 /* Get section's size in words. This is calculated from the last occupied word
-** of the section. */
+** of the section. The FILE section always returns zero size. */
 auint section_getsize(section_t* hnd)
 {
  auint i = SECT_MAX;
@@ -380,6 +381,8 @@ auint section_getsize(section_t* hnd)
    }
    i --;
   }
+ }else{                   /* Other sections return zero size */
+  i = 0U;
  }
 
  return i;

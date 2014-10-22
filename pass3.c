@@ -13,6 +13,9 @@
 #include "pass3.h"
 
 
+/* Sections to process into the output file */
+static const auint pass3_secout[4] = {SECT_HEAD, SECT_DESC, SECT_CODE, SECT_DATA};
+
 
 /* Executes the third pass. This combines the application components prepared
 ** in pass 2 with the FILE section binary data blocks into a new application
@@ -31,8 +34,8 @@ auint pass3_run(FILE* obi, symtab_t* stb, bindata_t* bdt)
  /* Write out sections in order. The FILE section will have zero size here, so
  ** no problem including it. */
 
- for (i = 0U; i < SECT_CNT; i++){
-  section_setsect(sec, i);
+ for (i = 0U; i < (sizeof(pass3_secout) / sizeof(pass3_secout[0])); i++){
+  section_setsect(sec, pass3_secout[i]);
   d   = section_getdata(sec);
   ssi = section_getsize(sec);
   for (j = 0U; j < ssi; j++){

@@ -197,7 +197,7 @@ auint litpr_symdefproc(symtab_t* stb)
                        0U, section_getsbstr(section_getsect(sec)));
   if (i == 0U){ goto fault_ot1; }
   i = symtab_bind(stb, &s[0], i);
-  if (i == 0U){ goto fault_ot1; }
+  if (i != 0U){ goto fault_ot1; }
   return PARSER_OK;  /* OK, found, added, done */
  }
 
