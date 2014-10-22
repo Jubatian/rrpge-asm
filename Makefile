@@ -24,9 +24,10 @@ include Make_defines.mk
 CFLAGS+=
 
 OBJECTS= $(OBD)main.o
-OBJECTS+=$(OBD)compst.o $(OBD)fault.o  $(OBD)firead.o $(OBD)incstk.o
-OBJECTS+=$(OBD)litpr.o  $(OBD)opcpr.o  $(OBD)pass1.o  $(OBD)pass2.o
-OBJECTS+=$(OBD)pass3.o  $(OBD)ps1sup.o $(OBD)strpr.o  $(OBD)valwr.o
+OBJECTS+=$(OBD)bindata.o $(OBD)compst.o  $(OBD)fault.o   $(OBD)firead.o
+OBJECTS+=$(OBD)incstk.o  $(OBD)litpr.o   $(OBD)opcpr.o   $(OBD)pass1.o
+OBJECTS+=$(OBD)pass2.o   $(OBD)pass3.o   $(OBD)ps1sup.o  $(OBD)section.o
+OBJECTS+=$(OBD)strpr.o   $(OBD)symtab.o  $(OBD)valwr.o
 
 
 all: $(OUT)
@@ -43,6 +44,9 @@ $(OBB):
 
 $(OBD)main.o: main.c
 	$(CC) -c main.c -o $(OBD)main.o $(CFSIZ)
+
+$(OBD)bindata.o: bindata.c
+	$(CC) -c bindata.c -o $(OBD)bindata.o $(CFSIZ)
 
 $(OBD)compst.o: compst.c
 	$(CC) -c compst.c -o $(OBD)compst.o $(CFSIZ)
@@ -74,8 +78,14 @@ $(OBD)pass3.o: pass3.c
 $(OBD)ps1sup.o: ps1sup.c
 	$(CC) -c ps1sup.c -o $(OBD)ps1sup.o $(CFSIZ)
 
+$(OBD)section.o: section.c
+	$(CC) -c section.c -o $(OBD)section.o $(CFSIZ)
+
 $(OBD)strpr.o: strpr.c
 	$(CC) -c strpr.c -o $(OBD)strpr.o $(CFSIZ)
+
+$(OBD)symtab.o: symtab.c
+	$(CC) -c symtab.c -o $(OBD)symtab.o $(CFSIZ)
 
 $(OBD)valwr.o: valwr.c
 	$(CC) -c valwr.c -o $(OBD)valwr.o $(CFSIZ)
