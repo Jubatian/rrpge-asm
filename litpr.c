@@ -211,7 +211,7 @@ auint litpr_symdefproc(symtab_t* stb)
   if ( ((r & LITPR_VAL) != 0U) ||
        ((r & LITPR_UND) != 0U) ){  /* Valid literal or symbol aggregate */
    i = symtab_bind(stb, &s[0], v);
-   if (i == 0U){ goto fault_ot1; }
+   if (i != 0U){ goto fault_ot1; }
    return PARSER_END;
   }
  }

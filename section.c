@@ -30,7 +30,7 @@
 #define CODE_S 65536U
 #define DATA_S SECT_MAXRAM
 #define HEAD_S 65536U
-#define DESC_S 20U
+#define DESC_S 32U
 #define ZERO_S SECT_MAXRAM
 #define CODE_O (0U)
 #define DATA_O (CODE_O + CODE_S)
