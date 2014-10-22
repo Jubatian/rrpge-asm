@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.20
+**  \date      2014.10.22
 **
 **  Manages the sections and their data during the compilation. Currently
 **  singleton, but desinged so it is possible to extend later.
@@ -131,7 +131,7 @@ section_t* section_getobj(void)
 uint8 const* section_getsbstr(auint sec)
 {
  if (sec <= SECT_IDM){
-  return (section_sectbs[sec]);
+  return (section_secbs[sec]);
  }else{
   return NULL;
  }
@@ -219,6 +219,7 @@ auint section_pushw(section_t* hnd, auint data)
  }
 
  hnd->p[s] ++;
+ return SECT_ERR_OK;
 }
 
 
@@ -253,6 +254,8 @@ auint section_pushb(section_t* hnd, auint data)
  }else{
   hnd->b[s] = 1U;
  }
+
+ return SECT_ERR_OK;
 }
 
 
@@ -300,7 +303,7 @@ void  section_fsetw(section_t* hnd, auint off, auint data)
 {
  auint s = hnd->s;
 
- if (s <= SECT_IMD_D){    /* Only for sections with data */
+ if (s <= SECT_IDM_D){    /* Only for sections with data */
 
   if (off < section_s[s]){
    hnd->d[section_o[s] + off] = (uint16)(data);
@@ -319,7 +322,7 @@ void  section_strpad(section_t* hnd, auint off)
 {
  auint s = hnd->s;
 
- if (s <= SECT_IMD_D){    /* Only for sections with data */
+ if (s <= SECT_IDM_D){    /* Only for sections with data */
 
   if (off < section_s[s]){
 
@@ -368,6 +371,7 @@ auint section_getaddr(section_t* hnd, auint off)
 auint section_getsize(section_t* hnd)
 {
  auint i = SECT_MAX;
+ auint s = hnd->s;
 
  if (s <= SECT_IDM_M){    /* Possible only for sections having map */
   while (i != 0U){
@@ -387,5 +391,5 @@ auint section_getsize(section_t* hnd)
 ** The size of the memory area can be retrieved by section_getsize(), */
 uint16 const* section_getdata(section_t* hnd)
 {
- return (hnd->d[section_o[hnd->s]]);
+ return (&(hnd->d[section_o[hnd->s]]));
 }

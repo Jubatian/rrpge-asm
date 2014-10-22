@@ -38,6 +38,7 @@ int main(int argc, char** argv)
  section_t* sec = section_getobj();
  symtab_t*  stb = symtab_getobj();
  bindata_t* bdt = bindata_getobj();
+ auint      t;
 
 
  /* Welcome message (should be here) */
@@ -67,9 +68,9 @@ int main(int argc, char** argv)
  /* Pass1 */
 
  printf("Compilation pass1\n");
- i = pass1_run(fp, stb, bdt);
+ t = pass1_run(fp, stb, bdt);
  firead_close(fp);
- if (i){ goto fault_oth; }
+ if (t){ goto fault_oth; }
 
  /* Pass2 */
 

@@ -31,7 +31,7 @@ typedef struct{
 
 
 /* Bindata manager object */
-typedef struct bindata_s{
+struct bindata_s{
  bindata_def_t* def;    /* Bindata definition */
  auint          dct;    /* Count of definitions */
  auint          dsi;    /* Size of definition array */
@@ -78,6 +78,7 @@ auint bindata_proc(bindata_t* hnd, symtab_t* stb)
  auint        beg = strpr_nextnw(src, 0U);
  FILE*        bif;
  size_t       frv;
+ auint        i;
  uint8        c;
 
  /* Check if it is a bindata */
@@ -92,7 +93,7 @@ auint bindata_proc(bindata_t* hnd, symtab_t* stb)
  i   = strpr_extstr(&(ste[0]), &src[beg], LINE_MAX);
  if (i == 0U){ goto fault_in0; }
  beg = strpr_nextnw(src, beg + i);
- if (!strpr_isend(&src[beg])){ goto fault_in0; }
+ if (!strpr_isend(src[beg])){ goto fault_in0; }
  compst_setcoffrel(cst, beg);
 
  /* Depending on section, process it */
@@ -143,7 +144,7 @@ fault_op0:
  strerror_r(errno, (char*)(&e[0]), 80U);
  e[79] = 0U;
  fclose(bif);
- snprintf((char*)(&s[0]), 80U, "Unable to open %s: %s", (char const*)(ste[0]), (char const*)(e[0]));
+ snprintf((char*)(&s[0]), 80U, "Unable to open %s: %s", (char const*)(&ste[0]), (char const*)(&e[0]));
  fault_printat(FAULT_FAIL, &s[0], cst);
  return PARSER_ERR;
 
@@ -152,7 +153,7 @@ fault_rd0:
  strerror_r(errno, (char*)(&e[0]), 80U);
  e[79] = 0U;
  fclose(bif);
- snprintf((char*)(&s[0]), 80U, "Unable to read %s: %s", (char const*)(ste[0]), (char const*)(e[0]));
+ snprintf((char*)(&s[0]), 80U, "Unable to read %s: %s", (char const*)(&ste[0]), (char const*)(&e[0]));
  fault_printat(FAULT_FAIL, &s[0], cst);
  return PARSER_ERR;
 

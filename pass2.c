@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.20
+**  \date      2014.10.22
 */
 
 
@@ -81,12 +81,10 @@ auint pass2_run(symtab_t* stb)
 {
  uint8         s[80];
  section_t*    sec = symtab_getsectob(stb);
- compst_t*     cst = symtab_getcompst(stb);
  auint         ssi[SECT_CNT]; /* Section sizes */
  auint         sbs[SECT_CNT]; /* Section bases */
  auint         i;
  auint         t;
- uint16 const* sdt;
 
  /* Autofill head and desc sections where necessary */
 

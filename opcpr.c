@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.21
+**  \date      2014.10.22
 */
 
 
@@ -582,9 +582,8 @@ static auint opcpr_cops(symtab_t* stb, auint sv, auint msk)
  section_t*   sec = symtab_getsectob(stb);
  compst_t*    cst = symtab_getcompst(stb);
  uint8 const* src = compst_getsstrcoff(cst);
- auint  off = section_getoffw(sec);
+ auint  pof = section_getoffw(sec);
  auint  beg;
- auint  pof = off;
 
  beg = strpr_nextnw(src, 0U);
  if (section_pushw(sec, msk) != 0U){ goto fault_ps3; }
@@ -597,7 +596,6 @@ static auint opcpr_cops(symtab_t* stb, auint sv, auint msk)
   src = compst_getsstrcoff(cst);
   beg = strpr_nextnw(src, 0U);
  }
- off = section_getoffw(sec);
 
  /* From here encode parameters, as many as comes. Empty {} is also allowed */
 
@@ -605,13 +603,12 @@ static auint opcpr_cops(symtab_t* stb, auint sv, auint msk)
   beg = strpr_nextnw(src, beg + 1U);
   if (src[beg] != (uint8)('}')){
    while (1){
-    pof = off;
+    pof = section_getoffw(sec);
     if (section_pushw(sec, 0xC000U) != 0U){ goto fault_ps3; } /* Parameters should form as NOPs */
     compst_setcoffrel(cst, beg);
     if (!opcpr_addr(stb)){ return 0U; } /* Failed on addressing mode */
     src = compst_getsstrcoff(cst);
     beg = strpr_nextnw(src, 0U);
-    off = section_getoffw(sec);
     if (src[beg] != (uint8)(',')){
      if (src[beg] == (uint8)('}')){ break; }
      goto fault_cmb;
@@ -622,7 +619,7 @@ static auint opcpr_cops(symtab_t* stb, auint sv, auint msk)
   }
   beg++;
  }
- section_setw(sec, off, 0x0040U); /* Terminate parameter list */
+ section_setw(sec, pof, 0x0040U); /* Terminate parameter list */
 
  /* Check end of string */
 
@@ -661,7 +658,6 @@ static auint opcpr_jops(symtab_t* stb, auint msk)
  section_t*   sec = symtab_getsectob(stb);
  compst_t*    cst = symtab_getcompst(stb);
  uint8 const* src = compst_getsstrcoff(cst);
- auint  off = section_getoffw(sec);
  auint  beg;
 
  beg = strpr_nextnw(src, 0U);
@@ -758,7 +754,6 @@ static auint opcpr_nops(symtab_t* stb, auint msk)
  section_t*   sec = symtab_getsectob(stb);
  compst_t*    cst = symtab_getcompst(stb);
  uint8 const* src = compst_getsstrcoff(cst);
- auint  off = section_getoffw(sec);
  auint  beg;
 
  beg = strpr_nextnw(src, 0U);

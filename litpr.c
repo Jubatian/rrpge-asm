@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.21
+**  \date      2014.10.22
 */
 
 
@@ -126,8 +126,8 @@ auint litpr_getval(uint8 const* src, auint* len, auint* val, symtab_t* stb)
  if (strpr_issym(src[0])){
   e = 0U;               /* Calculate symbol length */
   while (strpr_issym(src[e])){ e++; }
-  val = symtab_getsymdef(stb, src);
-  if (val == 0U){ goto end_fault; }
+  *val = symtab_getsymdef(stb, src);
+  if ((*val) == 0U){ goto end_fault; }
   r |= LITPR_UND;       /* Symbol aggregate */
   goto end_sok;
  }
@@ -194,7 +194,7 @@ auint litpr_symdefproc(symtab_t* stb)
   compst_setcoffrel(cst, i + 1U);
   i = symtab_addsymdef(stb, SYMTAB_CMD_ADD | SYMTAB_CMD_S1N,
                        section_getoffw(sec), NULL,
-                       0U, section_getsbstr[section_getsect(sec)]);
+                       0U, section_getsbstr(section_getsect(sec)));
   if (i == 0U){ goto fault_ot1; }
   i = symtab_bind(stb, &s[0], i);
   if (i == 0U){ goto fault_ot1; }
@@ -208,7 +208,7 @@ auint litpr_symdefproc(symtab_t* stb)
    v = symtab_addsymdef(stb, SYMTAB_CMD_MOV, v, NULL, 0U, NULL);
    if (v == 0U){ goto fault_ot1; }
   }
-  if ( ((r & LITPR_VAL) != 0U)
+  if ( ((r & LITPR_VAL) != 0U) ||
        ((r & LITPR_UND) != 0U) ){  /* Valid literal or symbol aggregate */
    i = symtab_bind(stb, &s[0], v);
    if (i == 0U){ goto fault_ot1; }

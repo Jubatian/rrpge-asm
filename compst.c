@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.21
+**  \date      2014.10.22
 */
 
 
@@ -41,7 +41,6 @@ compst_t* compst_getobj(void)
 void  compst_init(compst_t* hnd)
 {
  memset(hnd, 0U, sizeof(hnd));         /* This is almost all fine for it */
- hnd->off[SECT_DATA] = (0x3000U << 1); /* Data however starts at this offset */
 }
 
 

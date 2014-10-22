@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.21
+**  \date      2014.10.22
 */
 
 
@@ -28,15 +28,16 @@
 auint ps1sup_parsmisc(symtab_t* stb)
 {
  uint8        s[80];
- uint8 const* src = compst_getsstrcoff(hnd); /* Might not be first char (Labels!) */
+ compst_t*    cst = symtab_getcompst(stb);
+ section_t*   sec = symtab_getsectob(stb);
+ uint8 const* src = compst_getsstrcoff(cst); /* Might not be first char (Labels!) */
  auint        sid = section_getsect(sec);
  auint        beg = strpr_nextnw(src, 0U);
+ auint        off;
  auint        u;
  auint        t;
  uint32       v;
  uint8        ste[LINE_MAX];
- compst_t*    cst = symtab_getcompst(stb);
- section_t*   sec = symtab_getsectob(stb);
 
  if (strpr_isend(src[beg])){
   return PARSER_END; /* No content on this line, so processed succesful */
@@ -200,49 +201,49 @@ fault_ins:
 
  compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "Malformed section specification");
- fault_printat(FAULT_FAIL, &s[0], hnd);
+ fault_printat(FAULT_FAIL, &s[0], cst);
  return PARSER_ERR;
 
 fault_ino:
 
  compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "Malformed origin");
- fault_printat(FAULT_FAIL, &s[0], hnd);
+ fault_printat(FAULT_FAIL, &s[0], cst);
  return PARSER_ERR;
 
 fault_dsz:
 
  compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "\'ds\' is only allowed in zero section");
- fault_printat(FAULT_FAIL, &s[0], hnd);
+ fault_printat(FAULT_FAIL, &s[0], cst);
  return PARSER_ERR;
 
 fault_ind:
 
  compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "Malformed \'ds\'");
- fault_printat(FAULT_FAIL, &s[0], hnd);
+ fault_printat(FAULT_FAIL, &s[0], cst);
  return PARSER_ERR;
 
 fault_dxs:
 
  compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "\'db\' or \'dw\' is only allowed in code, data, head or desc");
- fault_printat(FAULT_FAIL, &s[0], hnd);
+ fault_printat(FAULT_FAIL, &s[0], cst);
  return PARSER_ERR;
 
 fault_inx:
 
  compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "Malformed \'db\' or \'dw\'");
- fault_printat(FAULT_FAIL, &s[0], hnd);
+ fault_printat(FAULT_FAIL, &s[0], cst);
  return PARSER_ERR;
 
 fault_ovr:
 
  compst_setcoffrel(cst, beg);
  snprintf((char*)(&s[0]), 80U, "Overlap or out of section encountered");
- fault_printat(FAULT_FAIL, &s[0], hnd);
+ fault_printat(FAULT_FAIL, &s[0], cst);
  return PARSER_ERR;
 
 fault_oth:

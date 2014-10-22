@@ -68,7 +68,6 @@ auint pass1_run(FILE* sf, symtab_t* stb, bindata_t* bdt)
  uint8        s[80];
  uint8        ste[LINE_MAX];
  compst_t*    cst = symtab_getcompst(stb);
- section_t*   sec = symtab_getsectob(stb);
  uint8 const* src;
  auint        beg;
  auint        i;
@@ -115,7 +114,7 @@ auint pass1_run(FILE* sf, symtab_t* stb, bindata_t* bdt)
 
    i = litpr_symdefproc(stb);
    if (i == PARSER_ERR){ goto fault_oth; }
-   if (i == PARSER_OK{   /* Further elements may follow */
+   if (i == PARSER_OK){  /* Further elements may follow */
 
     i = ps1sup_parsmisc(stb);
     if (i == PARSER_ERR){ goto fault_oth; }

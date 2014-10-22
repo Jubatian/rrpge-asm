@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.22
 **
 **  Manages the symbol table: creates entries, and for pass2, resolves those.
 **  Currently singleton, but designed so it is possible to extend later.
@@ -54,7 +54,7 @@ typedef struct symtab_s symtab_t;
 /* Symbol definition command: Source 1 is name (s1n) for other symbol flag. */
 #define SYMTAB_CMD_S1N  0x8000U
 /* Symbol definition command: Source 1 is ID (s1v) for other symbol flag. */
-#define SYMTAB_CMD_S1V  0x2000U
+#define SYMTAB_CMD_S1I  0x2000U
 
 /* Symbol definition command: Use only first source. */
 #define SYMTAB_CMD_MOV  0x00U

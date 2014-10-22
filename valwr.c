@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.22
 */
 
 
@@ -21,21 +21,20 @@
 auint valwr_write(section_t* dst, uint32 val, auint off, auint use, fault_off_t const* fof)
 {
  uint8 s[80];
- auint o;
  auint t;
 
  switch (use){
 
   case VALWR_C16:
-   section_setw(dst, o, val & 0xFFFFU);
+   section_setw(dst, off, val & 0xFFFFU);
    break;
 
   case VALWR_C8H:
-   section_setw(dst, o, val & 0xFF00U);
+   section_setw(dst, off, val & 0xFF00U);
    break;
 
   case VALWR_C8L:
-   section_setw(dst, o, val & 0x00FFU);
+   section_setw(dst, off, val & 0x00FFU);
    break;
 
   case VALWR_A4:
@@ -43,12 +42,12 @@ auint valwr_write(section_t* dst, uint32 val, auint off, auint use, fault_off_t 
     snprintf((char*)(&s[0]), 80U, "Value is too large, truncated");
     fault_print(FAULT_NOTE, &s[0], fof);
    }
-   section_setw(dst, o, val & 0x000FU);
+   section_setw(dst, off, val & 0x000FU);
    break;
 
   case VALWR_A16:
-   section_setw(dst, o, (val >> 14) & 0x3U);
-   section_setw(dst, o + 1U, val & 0x3FFFU);
+   section_setw(dst, off, (val >> 14) & 0x3U);
+   section_setw(dst, off + 1U, val & 0x3FFFU);
    break;
 
   case VALWR_B4:
@@ -56,27 +55,27 @@ auint valwr_write(section_t* dst, uint32 val, auint off, auint use, fault_off_t 
     snprintf((char*)(&s[0]), 80U, "Value is too large, truncated");
     fault_print(FAULT_NOTE, &s[0], fof);
    }
-   section_setw(dst, o, (val & 0xFU) << 6);
+   section_setw(dst, off, (val & 0xFU) << 6);
    break;
 
   case VALWR_R16:
    /* This is for relative jumps, 16 bit offset (no range check necessary). */
-   t = (val - o) & 0xFFFFU;
-   section_setw(dst, o, (t >> 14) & 0x3U);
-   section_setw(dst, o + 1U, t & 0x3FFFU);
+   t = (val - off) & 0xFFFFU;
+   section_setw(dst, off, (t >> 14) & 0x3U);
+   section_setw(dst, off + 1U, t & 0x3FFFU);
    break;
 
   case VALWR_R10:
    /* This is for relative jumps. It has to be determined whether the jump
    ** from 'o' to 'val' is within the relative jump's range (-512 - 511). */
-   t = (val - o) & 0xFFFFU;
+   t = (val - off) & 0xFFFFU;
    if ( (val > 0xFFFFU) ||
         ( (t > 0x01FFU) && (t < 0xFE00U) ) ){
     snprintf((char*)(&s[0]), 80U, "Relative jump target is out of range");
     fault_print(FAULT_FAIL, &s[0], fof);
     return 1U;
    }
-   section_setw(dst, o, t & 0x03FFU);
+   section_setw(dst, off, t & 0x03FFU);
    break;
 
   default:

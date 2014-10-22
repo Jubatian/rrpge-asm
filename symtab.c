@@ -44,7 +44,7 @@ typedef struct{
 
 
 /* Symbol table data structure */
-typedef struct symtab_s{
+struct symtab_s{
  section_t*    sec;     /* Bound section */
  compst_t*     cst;     /* Bound compile state */
  symtab_def_t* def;     /* Symbol definitions */
@@ -62,12 +62,12 @@ typedef struct symtab_s{
 
 /* Built-in singleton object's components */
 static symtab_def_t symtab_def[SYMTAB_DEF_SIZE];
-static symtab_use_t symtab_use[SYMTAB_USE_SIZE];
+static symtab_use_t symtab_usd[SYMTAB_USE_SIZE];
 static uint8        symtab_str[SYMTAB_STR_SIZE];
 static symtab_t     symtab_tab = {
  NULL, NULL,
  symtab_def, 0U, SYMTAB_DEF_SIZE,
- symtab_use, 0U, SYMTAB_USE_SIZE,
+ symtab_usd, 0U, SYMTAB_USE_SIZE,
  symtab_str, 0U, SYMTAB_STR_SIZE};
 
 
@@ -243,7 +243,7 @@ auint symtab_getsymdef(symtab_t* hnd, uint8 const* nam)
 {
  auint i;
  auint j;
- auint r;
+ auint r = 0U;
 
  i = symtab_snfind(hnd, nam);
 
@@ -256,7 +256,9 @@ auint symtab_getsymdef(symtab_t* hnd, uint8 const* nam)
    }
   }
 
- }else{        /* Does not exist: add "dangling" symbol definition */
+ }
+
+ if (r == 0U){ /* Does not exist: add "dangling" symbol definition */
 
   r = symtab_addsymdef(hnd, SYMTAB_CMD_MOV | SYMTAB_CMD_S0N, 0, nam, 0, NULL);
 
@@ -320,7 +322,6 @@ fault_ot1:
 auint symtab_use(symtab_t* hnd, auint def, auint off, auint use)
 {
  uint8 s[80];
- auint i;
 
  /* Check ID validity */
 
@@ -344,7 +345,7 @@ fault_sus:
  fault_printat(FAULT_FAIL, &s[0], hnd->cst);
  return 1U;
 
-fault_idn:
+fault_idi:
 
  snprintf((char*)(&s[0]), 80U, "Symbol definition ID invalid");
  fault_printat(FAULT_FAIL, &s[0], hnd->cst);
@@ -358,6 +359,7 @@ fault_idn:
 ** generated into 'v'. */
 static auint symtab_recres(symtab_def_t* def, auint i, auint hops, auint* v)
 {
+ uint8 s[80];
  auint r;
 
  if (hops >= MAX_HOPS){ goto fault_hop; }
@@ -424,7 +426,7 @@ fault_ot3:
 auint symtab_resolve(symtab_t* hnd)
 {
  uint8 s[80];
- auint i;
+ auint i; /* GCC Bug: The compiler may improperly report this variable to be used uninitialized */
  auint j;
  auint t;
  symtab_use_t* use = hnd->use;
@@ -462,6 +464,7 @@ auint symtab_resolve(symtab_t* hnd)
  /* Resolve all symbol definitions into MOVs */
 
  for (j = 1U; j < dct; j++){
+  i = 0U;
   if (symtab_recres(def, j, 0U, &i)){ goto fault_ot4; }
  }
 
@@ -480,7 +483,7 @@ auint symtab_resolve(symtab_t* hnd)
 
 fault_udd:
 
- snprintf((char*)(&s[0]), 80U, "Undefined symbol: %s", (char const*)(hnd->str[t]));
+ snprintf((char*)(&s[0]), 80U, "Undefined symbol: %s", (char const*)(&(hnd->str[t])));
  fault_print(FAULT_FAIL, &s[0], &(def[j].fof));
  return 1U;
 
