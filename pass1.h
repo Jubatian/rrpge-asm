@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2014.10.22
 */
 
 
@@ -15,8 +15,8 @@
 
 
 #include "types.h"
-#include "typec.h"
-#include "compst.h"
+#include "symtab.h"
+#include "bindata.h"
 
 
 
@@ -24,7 +24,7 @@
 ** processes it line by line generating code and header data (if necessary
 ** opening source includes as well), also filling up state for pass2 and
 ** pass3. Returns nonzero (TRUE) if failed (printing it's cause). */
-auint pass1_run(FILE* sf, compout_t* cd, compst_t* hnd);
+auint pass1_run(FILE* sf, symtab_t* stb, bindata_t* bdt);
 
 
 #endif
