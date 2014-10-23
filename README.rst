@@ -253,7 +253,7 @@ The assembly project should contain a definition for the Application Header.
 
 The Application Header needs to go into the HEAD section. The assembler
 automatically fills the header's framing, you only need to provide the
-contents for it. For example it may be done the following way:
+contents for it. For example it may be done the following way: ::
 
     section head
     org 0x0007              ; Author (AppAuth)
