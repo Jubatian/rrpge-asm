@@ -154,7 +154,7 @@ second pass may rely on the calculated offsets referred by labels.
 Data definition and allocation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Within the head, desc, code and data sections literal data may be defined
+Within the HEAD, DESC, CODE and DATA sections literal data may be defined
 using the 'dw' and 'db' keywords, such as: ::
 
     dw 0x0001, 2, 3, 0b0101010110101010
@@ -166,7 +166,7 @@ word boundary when defining an odd number of elements.
 Using the 'db' keyword strings may also be defined which is useful for
 building the Application Header. Note the word padding.
 
-Within the data section data may only be allocated using the 'ds' keyword: ::
+Within the ZERO section data may only be allocated using the 'ds' keyword: ::
 
     ds wordcount
 
@@ -191,6 +191,10 @@ literals are not case sensitive (both 'A' - 'F' and 'a' - 'f' are accepted).
 Strings of one to four characters may be used everywhere as literals, then
 their numeric value is taken in Big Endian order. Strings longer than four
 characters are only accepted in a 'db'.
+
+Note that no terminator is applied to the string (unlike for example the C
+language's strings). If a terminating zero is necessary, it may be provided as
+a separate data element after the string.
 
 Within strings the following special characters are accepted:
 
@@ -246,24 +250,32 @@ Recommendations for starting
 
 
 The assembly project should contain a definition for the Application Header.
-Check the appropriate section of the RRPGE specification to see how it should
-be constructed.
 
-For a proper Application Header the head may be built either as a binary
-include or directly in the form of 'db' definitions in the 'cons' section. The
-fields "AppAuth", "AppName", "Version", "EngSpec" and "License" are mandatory
-so they should be filled up. The textual data may be omitted, this case after
-the termination of the "License" field a zero (0x00) may be placed to indicate
-it is empty.
+The Application Header needs to go into the HEAD section. The assembler
+automatically fills the header's framing, you only need to provide the
+contents for it. For example it may be done the following way:
 
-The 0xBC0 - 0xBC4 range defining the basic properties of the application must
-be filled up appropriately. The assembler will fail if you omit populating
-this area. 0xBC4 may simply be set 0xF800 if no extra features of the header
-are necessary.
+    section head
+    org 0x0007              ; Author (AppAuth)
+            db "Me"
+    org 0x0014              ; Name of application (AppName)
+            db "Test app"
+    org 0x002A              ; Version of application (Version)
+            db "00.001.000"
+    org 0x0034              ; Compatible RRPGE version (EngSpec)
+            db "00.011.002"
+    org 0x0045              ; License (License)
+            db "RRPGEvt"
+            db "\n", 0      ; Terminator
 
-In the 0xC00 - 0xFFF area an appropriate 64x64 icon may be loaded using a
-'bindata' keyword. This is not necessary. Note that the application can not
-use this area, so there is no point to place anything else than an icon here.
+It is not necessary to fill in Application Descriptor if the defaults are OK.
+By default, no inputs are selected, and a separate 32 KWord stack is used.
+
+For more on the Application Header and Descriptor, check the RRPGE
+specification.
+
+Note that at least one instruction (in the CODE section) is necessary for the
+application to compile.
 
 
 
@@ -275,9 +287,11 @@ Bugs
 There are several things untested in there, however the most important parts
 should be functional.
 
-Some error reports may be quirky, such as currently symbol redefinition is
-only a warning, and prints the entire line with the symbol; and local jump and
-call (jml, jfl) can not be checked for out of range addresses.
+For relative jumps and calls (JMR and JFR), immediates are not encoded in
+relative, however JMS is encoded correctly with a relative immediate address.
+
+No FILE section support yet. First literal arithmetic has to be implemented to
+make it useful (so it is possible to load the 32 bit offset values).
 
 Register in first operand, special in second operand opcode forms are not
 supported such as "mov a, xm" since this case the assembler assumes the second
