@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.22
+**  \date      2014.10.24
 */
 
 
@@ -19,9 +19,10 @@
 
 
 /* Attempts to process the source line as one of the followings:
-** 'ds', 'db' or 'dw'.
+** 'ds', 'db' and 'dw'.
 ** 'org'.
 ** 'section'.
+** 'AppAuth', 'AppName', 'Version', 'EngSpec' and 'License'.
 ** Returns one of the defined PARSER return codes (defined in types.h). Note
 ** that it starts parsing the line at the last set char. position, so this way
 ** labels may be skipped (processed earlier using litpr_symdefproc()). */
@@ -44,7 +45,54 @@ auint ps1sup_parsmisc(symtab_t* stb)
  }
 
 
- /* Check for keywords */
+ /* Check for app. header keywords (they don't terminate the line, so other
+ ** keywords processed in this function might follow them) */
+
+
+ if       (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("AppAuth"))){
+
+  section_setsect(sec, SECT_HEAD);
+  section_setoffw(sec, 0x0007U);
+  beg = strpr_nextnw(src, beg + 4U);
+  compst_setcoffrel(cst, beg);
+  src += beg;
+
+ }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("AppName"))){
+
+  section_setsect(sec, SECT_HEAD);
+  section_setoffw(sec, 0x0014U);
+  beg = strpr_nextnw(src, beg + 4U);
+  compst_setcoffrel(cst, beg);
+  src += beg;
+
+ }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("Version"))){
+
+  section_setsect(sec, SECT_HEAD);
+  section_setoffw(sec, 0x002AU);
+  beg = strpr_nextnw(src, beg + 4U);
+  compst_setcoffrel(cst, beg);
+  src += beg;
+
+ }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("EngSpec"))){
+
+  section_setsect(sec, SECT_HEAD);
+  section_setoffw(sec, 0x0034U);
+  beg = strpr_nextnw(src, beg + 4U);
+  compst_setcoffrel(cst, beg);
+  src += beg;
+
+ }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("License"))){
+
+  section_setsect(sec, SECT_HEAD);
+  section_setoffw(sec, 0x0045U);
+  beg = strpr_nextnw(src, beg + 4U);
+  compst_setcoffrel(cst, beg);
+  src += beg;
+
+ }else{}             /* No app. header keyword, go on */
+
+
+ /* Check for other keywords */
 
 
  if       (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("section"))){

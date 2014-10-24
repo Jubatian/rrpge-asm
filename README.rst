@@ -234,6 +234,20 @@ Labels should be used to mark the beginning, and if needed, the end of a data
 element.
 
 
+Special keywords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The special keywords 'AppAuth', 'AppName', 'Version', 'EngSpec' and 'License'
+exist to assist positioning at the respective fields of the Application
+Header. They are case sensitive.
+
+The keywords are roughly equivalent to a 'section' followed by an appropriate
+'org', however the line may continue after them (like after a label). Note
+that they change section (to HEAD), so a 'section' keyword may be necessary
+after them to switch to the desired section.
+
+
+
 
 The "rrpge.asm" file
 ------------------------------------------------------------------------------
@@ -255,17 +269,11 @@ The Application Header needs to go into the HEAD section. The assembler
 automatically fills the header's framing, you only need to provide the
 contents for it. For example it may be done the following way: ::
 
-    section head
-    org 0x0007              ; Author (AppAuth)
-            db "Me"
-    org 0x0014              ; Name of application (AppName)
-            db "Test app"
-    org 0x002A              ; Version of application (Version)
-            db "00.001.000"
-    org 0x0034              ; Compatible RRPGE version (EngSpec)
-            db "00.011.002"
-    org 0x0045              ; License (License)
-            db "RRPGEvt"
+    AppAuth db "Me"         ; Author (AppAuth)
+    AppName db "Test app"   ; Name of application (AppName)
+    Version db "00.001.000" ; Version of application (Version)
+    EngSpec db "00.011.003" ; Compatible RRPGE version (EngSpec)
+    License db "RRPGEvt"    ; License (License)
             db "\n", 0      ; Terminator
 
 It is not necessary to fill in Application Descriptor if the defaults are OK.

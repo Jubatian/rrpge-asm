@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.21
+**  \date      2014.10.24
 */
 
 
@@ -21,9 +21,10 @@
 
 
 /* Attempts to process the source line as one of the followings:
-** 'ds', 'db' or 'dw'.
+** 'ds', 'db' and 'dw'.
 ** 'org'.
 ** 'section'.
+** 'AppAuth', 'AppName', 'Version', 'EngSpec' and 'License'.
 ** Returns one of the defined PARSER return codes (defined in types.h). Note
 ** that it starts parsing the line at the last set char. position, so this way
 ** labels may be skipped (processed earlier using litpr_symdefproc()). */
