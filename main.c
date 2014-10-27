@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.22
+**  \date      2014.10.27
 **
 **
 ** Short usage summary:
@@ -27,6 +27,14 @@
 #include "pass3.h"
 
 
+/* Application name string */
+static char const* main_appname = "RRPGE Assembler. Version: 00.012.000-00";
+
+/* Other elements */
+static char const* main_appauth = "By: Sandor Zsuga (Jubatian)\n";
+static char const* main_copyrig = "Copyright: 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public\nLicense) extended as RRPGEvt (temporary version of the RRPGE License):\nsee LICENSE.GPLv3 and LICENSE.RRPGEvt in the project root.\n";
+
+
 
 int main(int argc, char** argv)
 {
@@ -41,9 +49,14 @@ int main(int argc, char** argv)
  auint      t;
 
 
- /* Welcome message (should be here) */
+ /* Welcome message */
 
- printf("\nRRPGE Assembler\n");
+ printf("\n");
+ printf("%s", main_appname);
+ printf("\n\n");
+ printf("%s", main_appauth);
+ printf("%s", main_copyrig);
+ printf("\n");
 
  /* Initialize */
 
