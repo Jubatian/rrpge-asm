@@ -18,15 +18,15 @@ PTR2			equ	0b0010
 PTR1			equ	0b0011
 PTR16			equ	0b0100
 PTR16I			equ	0b0110
-PTR16D			equ	0b0111
+PTR16W			equ	0b0111
 PTR8I			equ	0b1000
 PTR4I			equ	0b1001
 PTR2I			equ	0b1010
 PTR1I			equ	0b1011
-PTR8D			equ	0b1100
-PTR4D			equ	0b1101
-PTR2D			equ	0b1110
-PTR1D			equ	0b1111
+PTR8W			equ	0b1100
+PTR4W			equ	0b1101
+PTR2W			equ	0b1110
+PTR1W			equ	0b1111
 
 ;
 ; User Peripheral Area
@@ -104,6 +104,7 @@ kc_sfi_next		equ	0x0112
 kc_sfi_move		equ	0x0113
 kc_vid_setpal		equ	0x0300
 kc_vid_mode		equ	0x0330
+kc_vid_setst3d		equ	0x0340
 kc_inp_getprops		equ	0x0410
 kc_inp_dropdev		equ	0x0411
 kc_inp_getdidesc	equ	0x0412
@@ -116,6 +117,7 @@ kc_usr_getlocal		equ	0x0600
 kc_usr_getutf		equ	0x0601
 kc_usr_getlang		equ	0x0610
 kc_usr_getcolors	equ	0x0611
+kc_usr_getst3d		equ	0x0612
 kc_net_send		equ	0x0700
 kc_net_recv		equ	0x0701
 kc_net_listusers	equ	0x0710
