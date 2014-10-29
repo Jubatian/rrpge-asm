@@ -62,14 +62,15 @@ static auint opcpr_rx(uint8 const* src, auint beg, auint* enc)
 
 
 
-/* Checks for bp relative addressing looking for 'bp+' in the string. Returns
-** the new offset in string, or 0 if not found. Skips whitespaces before and
-** after. */
+/* Checks for bp relative addressing looking for 'bp+' or '$' in the string.
+** Returns the new offset in string, or 0 if not found. Skips whitespaces
+** before and after. */
 static auint opcpr_bp(uint8 const* src, auint beg)
 {
  beg = strpr_nextnw(src, beg);
 
  if (src[beg] == (uint8)('b')){
+
   beg++;
   if (src[beg] == (uint8)('p')){
    beg = strpr_nextnw(src, beg + 1U);
@@ -78,6 +79,14 @@ static auint opcpr_bp(uint8 const* src, auint beg)
     return beg;
    }
   }
+
+ }else{
+
+  if (src[beg] == (uint8)('$')){
+   beg = strpr_nextnw(src, beg + 1U);
+   return beg;
+  }
+
  }
 
  return 0U;

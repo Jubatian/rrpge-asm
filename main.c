@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.27
+**  \date      2014.10.29
 **
 **
 ** Short usage summary:
@@ -28,7 +28,7 @@
 
 
 /* Application name string */
-static char const* main_appname = "RRPGE Assembler. Version: 00.012.000-00";
+static char const* main_appname = "RRPGE Assembler. Version: 00.012.000-01";
 
 /* Other elements */
 static char const* main_appauth = "By: Sandor Zsuga (Jubatian)\n";

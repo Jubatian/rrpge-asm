@@ -61,6 +61,15 @@ described in the appropriate sections of the RRPGE specification.
 Note that the assembler accepts all opcode specifications and register names
 in lowercase.
 
+For BP relative addressing modes, compared to the specified 'bp +' format, the
+assembler also supports a shorter '$'. For example reaching the 0th parameter
+on the stack may be accomplished by: ::
+
+    mov a, [$0]
+
+This format works with any type of address specification, whitespaces are
+optional after the '$'.
+
 
 
 
