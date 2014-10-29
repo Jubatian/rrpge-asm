@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.22
+**  \date      2014.10.29
 */
 
 
@@ -62,20 +62,24 @@ static auint opcpr_rx(uint8 const* src, auint beg, auint* enc)
 
 
 
-/* Checks for 'bp' register name. Returns the new offset in string, or 0 if
-** not found. Skips whitespaces before. */
+/* Checks for bp relative addressing looking for 'bp+' in the string. Returns
+** the new offset in string, or 0 if not found. Skips whitespaces before and
+** after. */
 static auint opcpr_bp(uint8 const* src, auint beg)
 {
  beg = strpr_nextnw(src, beg);
+
  if (src[beg] == (uint8)('b')){
   beg++;
   if (src[beg] == (uint8)('p')){
-   beg++;
-   if (!strpr_issym(src[beg])){
+   beg = strpr_nextnw(src, beg + 1U);
+   if (src[beg] == (uint8)('+')){
+    beg = strpr_nextnw(src, beg + 1U);
     return beg;
    }
   }
  }
+
  return 0U;
 }
 
@@ -233,11 +237,8 @@ static auint opcpr_addr(symtab_t* stb)
    beg = i;
   }else{                        /* Immediate mode */
    i = opcpr_bp(src, beg);
-   if (i != 0U){                /* BP register found: BP relative immediate */
-    beg = strpr_nextnw(src, i);
-    if (src[beg] != (uint8)('+')){ goto fault_stk; }
-    beg++;
-    beg = strpr_nextnw(src, beg);
+   if (i != 0U){                /* BP relative immediate */
+    beg = i;
     section_setw(sec, off, 0x0004U | e);
     src = compst_setcoffrel(cst, beg);
     i = opcpr_addrimm(stb, 1U);
@@ -257,11 +258,8 @@ static auint opcpr_addr(symtab_t* stb)
 
  beg++;                         /* Pass the opening '[' */
  i = opcpr_bp(src, beg);
- if (i != 0U){                  /* BP register found: stack */
-  beg = strpr_nextnw(src, i);
-  if (src[beg] != (uint8)('+')){ goto fault_stk; }
-  beg++;
-  beg = strpr_nextnw(src, beg);
+ if (i != 0U){                  /* Stack addressing */
+  beg = i;
   i = opcpr_rp(src, beg, &e);
   if (i != 0U){                 /* Pointer mode */
    beg = strpr_nextnw(src, i);
@@ -307,13 +305,6 @@ static auint opcpr_addr(symtab_t* stb)
  return 1U;
 
  /* Encoding faults */
-
-fault_stk:
-
- compst_setcoffrel(cst, beg);
- snprintf((char*)(&s[0]), 80U, "Excepted \'+\' in addressing mode");
- fault_printat(FAULT_FAIL, &s[0], cst);
- return 0U;
 
 fault_par:
 
