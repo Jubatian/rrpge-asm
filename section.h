@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.22
+**  \date      2014.10.29
 **
 **  Manages the sections and their data during the compilation. Currently
 **  singleton, but desinged so it is possible to extend later.
@@ -57,7 +57,7 @@ section_t* section_getobj(void);
 
 
 /* Retrieves string for identifying the section base symbol. These are:
-** '$.code', '$.data', '$.head', '$.desc', '$.zero', and '$.file'. */
+** '@.code', '@.data', '@.head', '@.desc', '@.zero', and '@.file'. */
 uint8 const* section_getsbstr(auint sec);
 
 

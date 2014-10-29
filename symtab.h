@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.22
+**  \date      2014.10.29
 **
 **  Manages the symbol table: creates entries, and for pass2, resolves those.
 **  Currently singleton, but designed so it is possible to extend later.
@@ -21,8 +21,7 @@
 **  size definitions.
 **
 **  Section base offsets are meant to be applied using special symbols added
-**  before resolution. The suggested names for these: '$.code', '$.data',
-**  '$.head', '$.desc', '$.zero' and '$.file'.
+**  before resolution. See "section.h" for more.
 */
 
 

@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.22
+**  \date      2014.10.29
 */
 
 
@@ -36,7 +36,7 @@ auint strpr_copy(uint8* dst, uint8 const* src, auint len)
 
 
 /* Checks if a character is a valid character for a symbol or literal. These
-** may be characters of [0-9][a-z][A-Z][_][$][.]. Returns nonzero (TRUE) if it
+** may be characters of [0-9][a-z][A-Z][_][@][.]. Returns nonzero (TRUE) if it
 ** is so. */
 auint strpr_issym(uint8 c)
 {
@@ -44,7 +44,7 @@ auint strpr_issym(uint8 c)
  if ( (c >= (uint8)('A')) && (c <= (uint8)('Z')) ){ return 1U; }
  if ( (c >= (uint8)('a')) && (c <= (uint8)('z')) ){ return 1U; }
  if ( (c == (uint8)('_'))                        ){ return 1U; }
- if ( (c == (uint8)('$'))                        ){ return 1U; }
+ if ( (c == (uint8)('@'))                        ){ return 1U; }
  if ( (c == (uint8)('.'))                        ){ return 1U; }
  return 0U;
 }

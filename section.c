@@ -82,12 +82,12 @@ static auint const section_o[5] = {
 
 /* Section base symbols */
 static uint8 const* section_secbs[6] = {
- (uint8 const*)("$.code"),
- (uint8 const*)("$.data"),
- (uint8 const*)("$.head"),
- (uint8 const*)("$.desc"),
- (uint8 const*)("$.zero"),
- (uint8 const*)("$.file") };
+ (uint8 const*)("@.code"),
+ (uint8 const*)("@.data"),
+ (uint8 const*)("@.head"),
+ (uint8 const*)("@.desc"),
+ (uint8 const*)("@.zero"),
+ (uint8 const*)("@.file") };
 
 
 
@@ -127,7 +127,7 @@ section_t* section_getobj(void)
 
 
 /* Retrieves string for identifying the section base symbol. These are:
-** '$.code', '$.data', '$.head', '$.desc', '$.zero', and '$.file'. */
+** '@.code', '@.data', '@.head', '@.desc', '@.zero', and '@.file'. */
 uint8 const* section_getsbstr(auint sec)
 {
  if (sec <= SECT_IDM){
