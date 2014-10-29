@@ -20,7 +20,7 @@
 
 /* Decodes pointer register name: x0, x1, x2 or x3. Returns the new offset in
 ** string, the register encoding (0-3) in enc. Returns 0 if there was no valid
-** register at the offset. Skips white spaces if needed before the reg. */
+** register at the offset. Skips white spaces before and after the reg. */
 static auint opcpr_rp(uint8 const* src, auint beg, auint* enc)
 {
  beg = strpr_nextnw(src, beg);
@@ -29,7 +29,7 @@ static auint opcpr_rp(uint8 const* src, auint beg, auint* enc)
   if ( (src[beg] >= ((uint8)('0'))) && (src[beg] <= ((uint8)('3'))) ){
    if (!strpr_issym(src[beg + 1U])){
     *enc = src[beg] - (uint8)('0');
-    return (beg + 1U);
+    return (strpr_nextnw(src, beg + 1U));
    }
   }
  }
@@ -40,7 +40,7 @@ static auint opcpr_rp(uint8 const* src, auint beg, auint* enc)
 
 /* Decodes RX register name: a, b, c, d, x0, x1, x2 or x3. Returns the new
 ** offset in string, the register encoding (0-7) in enc. Returns 0 if there
-** was no valid register at the offset. Skips white spaces if needed before
+** was no valid register at the offset. Skips white spaces before and after
 ** the register. */
 static auint opcpr_rx(uint8 const* src, auint beg, auint* enc)
 {
@@ -54,7 +54,7 @@ static auint opcpr_rx(uint8 const* src, auint beg, auint* enc)
  if ( (src[beg] >= ((uint8)('a'))) && (src[beg] <= ((uint8)('d'))) ){
   if (!strpr_issym(src[beg + 1U])){
    *enc = src[beg] - (uint8)('a');
-   return (beg + 1U);
+   return (strpr_nextnw(src, beg + 1U));
   }
  }
  return 0U;
@@ -86,7 +86,7 @@ static auint opcpr_bp(uint8 const* src, auint beg)
 
 
 /* Checks for 'sp' register name. Returns the new offset in string, or 0 if
-** not found. Skips whitespaces before. */
+** not found. Skips whitespaces before and after. */
 static auint opcpr_sp(uint8 const* src, auint beg)
 {
  beg = strpr_nextnw(src, beg);
@@ -95,7 +95,7 @@ static auint opcpr_sp(uint8 const* src, auint beg)
   if (src[beg] == (uint8)('p')){
    beg++;
    if (!strpr_issym(src[beg])){
-    return beg;
+    return (strpr_nextnw(src, beg));
    }
   }
  }
@@ -106,7 +106,7 @@ static auint opcpr_sp(uint8 const* src, auint beg)
 
 /* Decodes pointer mode register name: xm or xh. Returns the new offset in
 ** string, the register encoding (0-1) in enc. Returns 0 if there was no valid
-** register at the offset. Skips white spaces if needed before the reg. */
+** register at the offset. Skips white spaces before and after the reg. */
 static auint opcpr_xm(uint8 const* src, auint beg, auint* enc)
 {
  beg = strpr_nextnw(src, beg);
@@ -116,7 +116,7 @@ static auint opcpr_xm(uint8 const* src, auint beg, auint* enc)
    if (!strpr_issym(src[beg + 1U])){
     if (src[beg] == ((uint8)('m'))){ *enc = 0U; }
     else                           { *enc = 1U; }
-    return (beg + 1U);
+    return (strpr_nextnw(src, beg + 1U));
    }
   }
  }
@@ -128,7 +128,7 @@ static auint opcpr_xm(uint8 const* src, auint beg, auint* enc)
 /* Decodes pointer mode register part: xm0, xm1, xm2, xm3, xh0, xh1, xh2 or
 ** xh3. Returns the new offset in string, the register encoding (0-7) in enc.
 ** Returns 0 if there was no valid register at the offset. Skips white spaces
-** if needed before the reg. */
+** before and after the reg. */
 static auint opcpr_x4(uint8 const* src, auint beg, auint* enc)
 {
  beg = strpr_nextnw(src, beg);
@@ -141,7 +141,7 @@ static auint opcpr_x4(uint8 const* src, auint beg, auint* enc)
    if ( (src[beg] >= ((uint8)('0'))) && (src[beg] <= ((uint8)('3'))) ){
     if (!strpr_issym(src[beg + 1U])){
      *enc |= src[beg] - (uint8)('0');
-     return (beg + 1U);
+     return (strpr_nextnw(src, beg + 1U));
     }
    }
   }
@@ -152,12 +152,13 @@ static auint opcpr_x4(uint8 const* src, auint beg, auint* enc)
 
 
 /* Processes immediate for addressing mode. Returns 0 if the source line is
-** improperly formatted for it, otherwise will return the size of the literal
-** or symbol. Encodes the immediate into the setion as appropriate, also
-** setting up for symbols if necessary. Sets offset according to the number of
-** words output: Assumes first word already pushed, adds second word if
-** necessary. Formats address according to immediate mode. The last parameter
-** if nonzero forces long immediate coding. Outputs failure informations. */
+** improperly formatted for it, otherwise will return the string size of the
+** literal or symbol, trailing whitespaces stripped. Encodes the immediate
+** into the setion as appropriate, also setting up for symbols if necessary.
+** Sets offset according to the number of words output: Assumes first word
+** already pushed, adds second word if necessary. Formats address according to
+** immediate mode. The last parameter if nonzero forces long immediate coding.
+** Outputs failure informations. */
 static auint opcpr_addrimm(symtab_t* stb, auint lng)
 {
  uint8  s[80];
@@ -179,14 +180,14 @@ static auint opcpr_addrimm(symtab_t* stb, auint lng)
  }else{                         /* Defined symbol, value extracted */
   v&= 0xFFFFU;
   if ((v < 16U) && (!lng)){     /* Small immediate */
-   if (valwr_writecs(sec, v, off, VALWR_A4, cst)){ return 0U; }
+   if (valwr_writecs(sec, v, off, VALWR_A4, cst)){ goto fault_ot9; }
   }else{                        /* Large immediate */
    section_setw(sec, off, 0x0020U); /* Large immediate */
    if (section_pushw(sec, 0xC000U) != 0U){ goto fault_ps9; } /* Prepare second NOP word */
-   if (valwr_writecs(sec, v, off, VALWR_A16, cst)){ return 0U; }
+   if (valwr_writecs(sec, v, off, VALWR_A16, cst)){ goto fault_ot9; }
   }
  }
- return u;
+ return (strpr_nextnw(src, u));
 
  /* Encoding faults */
 
@@ -213,8 +214,8 @@ fault_ot9:
 ** alters the addressing mode bits of the first opcode word (must be pushed
 ** beforehands), and will encode the second as a NOP if necessary. Works
 ** around symbols if necessary, appropriately. May emit fault. Character
-** position within the source line is updated. Returns nonzero (TRUE) on
-** success. */
+** position within the source line is updated (any trailing whitespaces are
+** skimmed over). Returns nonzero (TRUE) on success. */
 static auint opcpr_addr(symtab_t* stb)
 {
  uint8  s[80];
@@ -231,6 +232,7 @@ static auint opcpr_addr(symtab_t* stb)
  /* Register or immediate modes */
 
  if (src[beg] != (uint8)('[')){ /* Not memory: register or immediate */
+
   i = opcpr_rx(src, beg, &e);
   if (i != 0U){                 /* Register mode */
    section_setw(sec, off, 0x0030U | e);
@@ -250,57 +252,53 @@ static auint opcpr_addr(symtab_t* stb)
    beg = i;
    if (src[beg] == (uint8)(']')){ goto fault_in0; }
   }
-  compst_setcoffrel(cst, beg);
-  return 1U;
- }
 
- /* Memory modes, Stack */
+ }else{                         /* Memory addressing */
 
- beg++;                         /* Pass the opening '[' */
- i = opcpr_bp(src, beg);
- if (i != 0U){                  /* Stack addressing */
-  beg = i;
-  i = opcpr_rp(src, beg, &e);
-  if (i != 0U){                 /* Pointer mode */
-   beg = strpr_nextnw(src, i);
-   if (src[beg] != (uint8)(']')){ goto fault_par; }
-   beg++;
-   section_setw(sec, off, 0x003CU | e);
-  }else{                        /* Immediate mode */
-   src = compst_setcoffrel(cst, beg);
-   i = opcpr_addrimm(stb, 0U);
-   if (i == 0U){ goto fault_ot0; }
+  beg++;                        /* Pass the opening '[' */
+  i = opcpr_bp(src, beg);
+  if (i != 0U){                 /* Stack addressing */
+
    beg = i;
-   if (src[beg] != (uint8)(']')){ goto fault_par; }
-   beg++;
-   if (off == (section_getoffw(sec) - 1U)){
-    section_setw(sec, off, 0x0010U); /* Fix up for stack addressing, imm4 */
-   }else{
-    section_setw(sec, off, 0x000CU); /* Fix up for stack addressing, imm16 */
+   i = opcpr_rp(src, beg, &e);
+   if (i != 0U){                /* Pointer mode */
+    beg = i;
+    if (src[beg] != (uint8)(']')){ goto fault_par; }
+    section_setw(sec, off, 0x003CU | e);
+   }else{                       /* Immediate mode */
+    src = compst_setcoffrel(cst, beg);
+    i = opcpr_addrimm(stb, 0U);
+    if (i == 0U){ goto fault_ot0; }
+    beg = i;
+    if (src[beg] != (uint8)(']')){ goto fault_par; }
+    if (off == (section_getoffw(sec) - 1U)){
+     section_setw(sec, off, 0x0010U); /* Fix up for stack addressing, imm4 */
+    }else{
+     section_setw(sec, off, 0x000CU); /* Fix up for stack addressing, imm16 */
+    }
    }
+
+  }else{                        /* Data addressing */
+
+   i = opcpr_rp(src, beg, &e);
+   if (i != 0U){                /* Pointer mode */
+    beg = i;
+    if (src[beg] != (uint8)(']')){ goto fault_par; }
+    section_setw(sec, off, 0x0038U | e);
+   }else{                       /* Immediate mode */
+    src = compst_setcoffrel(cst, beg);
+    i = opcpr_addrimm(stb, 1U);
+    if (i == 0U){ goto fault_ot0; }
+    beg = i;
+    if (src[beg] != (uint8)(']')){ goto fault_par; }
+    section_setw(sec, off, 0x0008U); /* Fix up for data addressing */
+   }
+
   }
-  compst_setcoffrel(cst, beg);
-  return 1U;
+  beg = strpr_nextnw(src, beg + 1U);
+
  }
 
- /* Memory modes, Data */
-
- beg = strpr_nextnw(src, beg);
- i = opcpr_rp(src, beg, &e);
- if (i != 0U){                  /* Pointer mode */
-  beg = strpr_nextnw(src, i);
-  if (src[beg] != (uint8)(']')){ goto fault_par; }
-  beg++;
-  section_setw(sec, off, 0x0038U | e);
- }else{                         /* Immediate mode */
-  src = compst_setcoffrel(cst, beg);
-  i = opcpr_addrimm(stb, 1U);
-  if (i == 0U){ goto fault_ot0; }
-  beg = i;
-  if (src[beg] != (uint8)(']')){ goto fault_par; }
-  beg++;
-  section_setw(sec, off, 0x0008U); /* Fix up for data addressing */
- }
  compst_setcoffrel(cst, beg);
  return 1U;
 
@@ -342,8 +340,8 @@ fault_ot0:
 
 
 /* Encodes register operand with specials. Returns new string offset if
-** anything was encoded, zero otherwise. Encodes into the area passed by a
-** pointer. */
+** anything was encoded (trailing whitespaces skipped), zero otherwise.
+** Encodes into the area passed by a pointer. */
 static auint opcpr_aops_rx(uint8 const* src, auint beg, auint msp, auint* cptr)
 {
  auint  i;
@@ -428,15 +426,14 @@ static auint opcpr_aops(symtab_t* stb, auint msp, auint msk)
  section_setw(sec, off, v);
  if (i != 0U){                  /* Register is assumed first */
   section_setw(sec, off, 0x0200U);  /* Encoding of reg. first */
-  beg = strpr_nextnw(src, i);
+  beg = i;
   if (src[beg] != (uint8)(',')){ goto fault_com; }
   beg++;
   compst_setcoffrel(cst, beg);
   if (!opcpr_addr(stb)){ return 0U; } /* Failed on addressing mode */
   src = compst_getsstrcoff(cst);
-  beg = strpr_nextnw(src, 0U);
-  if (!strpr_isend(src[beg])){ goto fault_in1; }
-  compst_setcoffrel(cst, beg);
+  beg = 0U;
+  if (!strpr_isend(src[0])){ goto fault_in1; }
   return 1U;                    /* All OK, encoded */
  }
 
@@ -445,13 +442,13 @@ static auint opcpr_aops(symtab_t* stb, auint msp, auint msk)
  compst_setcoffrel(cst, beg);
  if (!opcpr_addr(stb)){ return 0U; } /* Failed on addressing mode */
  src = compst_getsstrcoff(cst);
- beg = strpr_nextnw(src, 0U);
- if (src[beg] != (uint8)(',')){ goto fault_com; }
- beg++;
+ beg = 0U;
+ if (src[0] != (uint8)(',')){ goto fault_com; }
+ beg = 1U;
  i = opcpr_aops_rx(src, beg, msp & (~OPCPR_SW), &v);
  section_setw(sec, off, v);
  if (i == 0U){ goto fault_in1; }
- beg = strpr_nextnw(src, i);
+ beg = i;
  if (!strpr_isend(src[beg])){ goto fault_in1; }
  compst_setcoffrel(cst, beg);
  return 1U;                     /* All OK, encoded */
@@ -512,10 +509,9 @@ static auint opcpr_bops(symtab_t* stb, auint msk)
  compst_setcoffrel(cst, beg);
  if (!opcpr_addr(stb)){ return 0U; } /* Failed on addressing mode */
  src = compst_getsstrcoff(cst);
- beg = strpr_nextnw(src, 0U);
- if (src[beg] != (uint8)(',')){ goto fault_cm2; }
- beg++;
- beg = strpr_nextnw(src, beg);
+ beg = 0U;
+ if (src[0] != (uint8)(',')){ goto fault_cm2; }
+ beg = strpr_nextnw(src, 1U);
 
  /* Check & encode literal and apply it (at the original code offset) */
 
@@ -532,7 +528,7 @@ static auint opcpr_bops(symtab_t* stb, auint msk)
 
  /* Check end of string */
 
- beg = beg + u;
+ beg = strpr_nextnw(src, beg + u);
  if (!strpr_isend(src[beg])){ goto fault_in2; }
  return 1U;                     /* All OK, encoded */
 
@@ -585,7 +581,7 @@ static auint opcpr_cops(symtab_t* stb, auint sv, auint msk)
   compst_setcoffrel(cst, beg);
   if (!opcpr_addr(stb)){ return 0U; } /* Failed on addressing mode */
   src = compst_getsstrcoff(cst);
-  beg = strpr_nextnw(src, 0U);
+  beg = 0U;
  }
 
  /* From here encode parameters, as many as comes. Empty {} is also allowed */
@@ -599,13 +595,12 @@ static auint opcpr_cops(symtab_t* stb, auint sv, auint msk)
     compst_setcoffrel(cst, beg);
     if (!opcpr_addr(stb)){ return 0U; } /* Failed on addressing mode */
     src = compst_getsstrcoff(cst);
-    beg = strpr_nextnw(src, 0U);
-    if (src[beg] != (uint8)(',')){
-     if (src[beg] == (uint8)('}')){ break; }
+    beg = 0U;
+    if (src[0] != (uint8)(',')){
+     if (src[0] == (uint8)('}')){ break; }
      goto fault_cmb;
     }
-    beg++;
-    beg = strpr_nextnw(src, beg);
+    beg = strpr_nextnw(src, 1U);
    };
   }
   beg++;
@@ -663,8 +658,8 @@ static auint opcpr_jops(symtab_t* stb, auint msk)
 
  /* Check end of string */
 
- beg = strpr_nextnw(src, 0U);
- if (!strpr_isend(src[beg])){ goto fault_in4; }
+ beg = 0U;
+ if (!strpr_isend(src[0])){ goto fault_in4; }
  return 1U;                     /* All OK, encoded */
 
 fault_in4:
