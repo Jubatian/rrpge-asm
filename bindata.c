@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.22
+**  \date      2014.11.02
 **
 **  Manages the processing of "bindata" directives, creating a list of binary
 **  includes, to be evaulated in pass3. This also includes performing the
@@ -143,7 +143,6 @@ fault_op0:
 
  strerror_r(errno, (char*)(&e[0]), 80U);
  e[79] = 0U;
- fclose(bif);
  snprintf((char*)(&s[0]), 80U, "Unable to open %s: %s", (char const*)(&ste[0]), (char const*)(&e[0]));
  fault_printat(FAULT_FAIL, &s[0], cst);
  return PARSER_ERR;
