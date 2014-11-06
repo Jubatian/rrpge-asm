@@ -125,3 +125,29 @@ kc_net_setavail		equ	0x0720
 kc_net_getavail		equ	0x0721
 kc_tsk_query		equ	0x0800
 kc_tsk_discard		equ	0x0801
+
+;
+; User Library functions
+;
+
+us_ptr_set1i		equ	0xF000
+us_ptr_set1w		equ	0xF002
+us_ptr_set2i		equ	0xF004
+us_ptr_set2w		equ	0xF006
+us_ptr_set4i		equ	0xF008
+us_ptr_set4w		equ	0xF00A
+us_ptr_set8i		equ	0xF00C
+us_ptr_set8w		equ	0xF00E
+us_ptr_set16i		equ	0xF010
+us_ptr_set16w		equ	0xF012
+us_ptr_setgen16i	equ	0xF018
+us_ptr_setgen16w	equ	0xF01A
+us_ptr_setgen		equ	0xF01C
+us_copy_pfc		equ	0xF020
+us_copy_cfp		equ	0xF022
+us_copy_pfp		equ	0xF024
+us_copy_cfc		equ	0xF026
+us_set_p		equ	0xF028
+us_set_c		equ	0xF02A
+us_copy_pfp_l		equ	0xF02C
+us_set_p_l		equ	0xF02E
