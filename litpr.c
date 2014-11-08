@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.22
+**  \date      2014.11.08
 */
 
 
@@ -46,15 +46,16 @@ auint litpr_getval(uint8 const* src, auint* len, auint* val, symtab_t* stb)
  auint r = 0U;          /* Return value */
  uint8 s[LINE_MAX];
  auint t;
+ compst_t* cst = symtab_getcompst(stb); /* Only for printing fault */
 
  /* Check for string */
 
  e = strpr_extstr(&(s[0]), src, LINE_MAX);
  if (e != 0U){ /* String found */
-  r |= LITPR_STR;
+  r = LITPR_STR;
   u = 0U;
   for (t = 0; t < 5U; t++){
-   if (s[t] == 0) break;
+   if (s[t] == 0){ break; }
    u = (u << 8) + s[t]; /* Big Endian order */
   }
   if (t < 5){ goto end_val; }
@@ -128,7 +129,7 @@ auint litpr_getval(uint8 const* src, auint* len, auint* val, symtab_t* stb)
   while (strpr_issym(src[e])){ e++; }
   *val = symtab_getsymdef(stb, src);
   if ((*val) == 0U){ goto end_fault; }
-  r |= LITPR_UND;       /* Symbol aggregate */
+  r = LITPR_UND;        /* Symbol aggregate */
   goto end_sok;
  }
 
@@ -153,11 +154,13 @@ end_sok:
       (src[e] != (uint8)('{')) &&
       (src[e] != (uint8)('}')) &&
       (src[e] != (uint8)(']')) ){ goto end_fault; }
+ if (r == LITPR_INV){ goto end_fault; } /* Should not happen, but have a message if so */
  return r;
 
 end_fault:
 
  *len = 0U;
+ fault_printat(FAULT_FAIL, (uint8 const*)("Improperly formatted literal"), cst);
  return LITPR_INV;
 
 }
