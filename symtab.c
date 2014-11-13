@@ -299,7 +299,7 @@ auint symtab_bind(symtab_t* hnd, uint8 const* nam, auint id)
 
 fault_rdf:
 
- snprintf((char*)(&s[0]), 80U, "Redefinition of symbol %s", (char const*)(nam));
+ snprintf((char*)(&s[0]), 80U, "Redefinition of symbol %s", (char const*)(&(hnd->str[hnd->def[j].bdi])));
  fault_printat(FAULT_FAIL, &s[0], hnd->cst);
  snprintf((char*)(&s[0]), 80U, "Location of previous definition");
  fault_print(FAULT_NOTE, &s[0], &(hnd->def[j].fof));
