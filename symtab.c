@@ -356,23 +356,65 @@ fault_idi:
 
 /* Internal recursive resolver. Hops is the hop count passed during resolving,
 ** used to break infinite loops. Returns nonzero on failure. Resolved value is
-** generated into 'v'. */
-static auint symtab_recres(symtab_def_t* def, auint i, auint hops, auint* v)
+** generated into 'v'. 'i' is the definition index to resolve in the
+** definition table, 'dct' is the size of the table. 'hops' should be started
+** with 0, it is the iteration count guard. Return is 2 + offset (in string
+** pool) if an undefined symbol is encountered, no fault is printed this case.
+** For other faults the return is 1, fault is printed. */
+static auint symtab_recres(symtab_def_t* def, auint i, auint dct, auint hops, auint* v)
 {
  uint8 s[80];
  auint r;
+ auint j;
+ auint t;
 
  if (hops >= MAX_HOPS){ goto fault_hop; }
 
+ /* Converts by-string symbol connections to by-id connections */
+
+ if ((def[i].cmd & SYMTAB_CMD_S0N) != 0U){ /* Source 0 is string, need to convert it */
+  t = def[i].s0i;
+  for (j = 1U; j < dct; j++){
+   if ((def[j].bdi) == t){
+    def[i].s0i = j;
+    break;
+   }
+  }
+  if (j == dct){ t += 2U; goto fault_uds; }
+  def[i].cmd |=  (auint)(SYMTAB_CMD_S0I);
+  def[i].cmd &= ~(auint)(SYMTAB_CMD_S0N);  /* Convert to ID bind */
+ }
+ if ((def[i].cmd & SYMTAB_CMD_S1N) != 0U){ /* Source 1 is string, need to convert it */
+  t = def[i].s1i;
+  for (j = 1U; j < dct; j++){
+   if ((def[j].bdi) == t){
+    def[i].s1i = j;
+    break;
+   }
+  }
+  if (j == dct){ t += 2U; goto fault_uds; }
+  def[i].cmd |=  (auint)(SYMTAB_CMD_S1I);
+  def[i].cmd &= ~(auint)(SYMTAB_CMD_S1N);  /* Convert to ID bind */
+ }
+
+ /* Resolve by-id connections, removing any references to further symbols */
+
  if ((def[i].cmd & SYMTAB_CMD_S0I) != 0U){ /* Need to resolve Source 0 */
-  if (symtab_recres(def, def[i].s0i, hops + 1U, &r)){ goto fault_ot3; }
-  def[i].s0i = r;
+  t = symtab_recres(def, def[i].s0i, dct, hops + 1U, &r);
+  if      (t == 0U){ def[i].s0i = r; }
+  else if (t >= 2U){ goto fault_uds; }
+  else             { goto fault_ot3; }
  }
  if ((def[i].cmd & SYMTAB_CMD_S1I) != 0U){ /* Need to resolve Source 1 */
-  if (symtab_recres(def, def[i].s1i, hops + 1U, &r)){ goto fault_ot3; }
-  def[i].s1i = r;
+  t = symtab_recres(def, def[i].s1i, dct, hops + 1U, &r);
+  if      (t == 0U){ def[i].s1i = r; }
+  else if (t >= 2U){ goto fault_uds; }
+  else             { goto fault_ot3; }
  }
  def[i].cmd &= 0xFFU;                      /* Remove any high bits from command (processed) */
+
+ /* Evaulate operation between the two source values, converting the symbol to
+ ** a simple MOV symbol, so value can be returned. */
 
  switch (def[i].cmd){
 
@@ -414,6 +456,10 @@ fault_div:
  fault_print(FAULT_FAIL, &s[0], &(def[i].fof));
  return 1U;
 
+fault_uds:
+
+ return t; /* Contains string pool offset + 2U */
+
 fault_ot3:
 
  return 1U;
@@ -428,44 +474,18 @@ auint symtab_resolve(symtab_t* hnd)
  uint8 s[80];
  auint i;
  auint dum;
- auint j;
  auint t;
  symtab_use_t* use = hnd->use;
  symtab_def_t* def = hnd->def;
  auint uct = hnd->uct;
  auint dct = hnd->dct;
 
- /* Attemt to resolve strings in symbol definitions to indices */
-
- for (j = 1U; j < dct; j++){
-  if ((def[j].cmd & SYMTAB_CMD_S0N) != 0U){ /* Source 0 string */
-   t = def[j].s0i;
-   for (i = 1U; i < dct; i++){
-    if ((def[i].bdi) == t){
-     def[j].s0i = i;
-     break;
-    }
-   }
-   if (i == dct){ goto fault_udd; }
-   def[j].cmd |= SYMTAB_CMD_S0I;
-  }
-  if ((def[j].cmd & SYMTAB_CMD_S1N) != 0U){ /* Source 1 string */
-   t = def[j].s1i;
-   for (i = 1U; i < dct; i++){
-    if ((def[i].bdi) == t){
-     def[j].s1i = i;
-     break;
-    }
-   }
-   if (i == dct){ goto fault_udd; }
-   def[j].cmd |= SYMTAB_CMD_S1I;
-  }
- }
-
  /* Resolve all symbol definitions into MOVs */
 
- for (j = 1U; j < dct; j++){
-  if (symtab_recres(def, j, 0U, &dum)){ goto fault_ot4; }
+ for (i = 1U; i < dct; i++){
+  t = symtab_recres(def, i, dct, 0U, &dum);
+  if (t == 1U){ goto fault_ot4; } /* Other fault, fault printed, just leave */
+  if (t >= 2U){ goto fault_udd; } /* Undefined symbol: string pool offset + 2U in 't' */
  }
 
  /* Resolve symbol usages into the appropriate section:offset locations */
@@ -483,8 +503,8 @@ auint symtab_resolve(symtab_t* hnd)
 
 fault_udd:
 
- snprintf((char*)(&s[0]), 80U, "Undefined symbol: %s", (char const*)(&(hnd->str[t])));
- fault_print(FAULT_FAIL, &s[0], &(def[j].fof));
+ snprintf((char*)(&s[0]), 80U, "Undefined symbol: %s", (char const*)(&(hnd->str[t - 2U])));
+ fault_print(FAULT_FAIL, &s[0], &(def[i].fof));
  return 1U;
 
 fault_ot4:
