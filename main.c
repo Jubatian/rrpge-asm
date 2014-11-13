@@ -28,7 +28,7 @@
 
 
 /* Application name string */
-static char const* main_appname = "RRPGE Assembler. Version: 00.013.001-00 (WIP)";
+static char const* main_appname = "RRPGE Assembler. Version: 00.013.001-00";
 
 /* Other elements */
 static char const* main_appauth = "By: Sandor Zsuga (Jubatian)\n";
