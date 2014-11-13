@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.29
+**  \date      2014.11.13
 **
 **  Manages the symbol table: creates entries, and for pass2, resolves those.
 **  Currently singleton, but designed so it is possible to extend later.
@@ -130,6 +130,13 @@ auint symtab_bind(symtab_t* hnd, uint8 const* nam, auint id);
 ** symbol name source) to bind to. Returns nonzero and prints fault if it is
 ** not possible to add this. */
 auint symtab_use(symtab_t* hnd, auint def, auint off, auint use);
+
+
+/* Attempts to resolve a given symbol to it's value. Returns nonzero on
+** success, filling in 'val' with the value of the symbol. Otherwise it
+** returns zero, and does not alter 'val'. This may be used to attempt to
+** pre-resolve symbols for optimizing instruction sizes where possible. */
+auint symtab_resolvesym(symtab_t* hnd, auint id, auint* val);
 
 
 /* Resolves the symbol table into the bound section. Prints fault and returns

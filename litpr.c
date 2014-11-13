@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.08
+**  \date      2014.11.13
 */
 
 
@@ -128,7 +128,12 @@ auint litpr_getval(uint8 const* src, auint* len, auint* val, symtab_t* stb)
   e = 0U;               /* Calculate symbol length */
   while (strpr_issym(src[e])){ e++; }
   *val = symtab_getsymdef(stb, src);
-  if ((*val) == 0U){ goto end_fault; }
+  if ((*val) == 0U){
+   goto end_faultpr;    /* Can not get new symbol definition (fault printed) */
+  }
+  if (symtab_resolvesym(stb, *val, &u)){
+   goto end_val;        /* Symbol can be pre-resolved, so produces value */
+  }
   r = LITPR_UND;        /* Symbol aggregate */
   goto end_sok;
  }
@@ -159,8 +164,11 @@ end_sok:
 
 end_fault:
 
- *len = 0U;
  fault_printat(FAULT_FAIL, (uint8 const*)("Improperly formatted literal"), cst);
+
+end_faultpr:
+
+ *len = 0U;
  return LITPR_INV;
 
 }

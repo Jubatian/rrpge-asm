@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.22
+**  \date      2014.11.13
 */
 
 
@@ -463,6 +463,29 @@ fault_uds:
 fault_ot3:
 
  return 1U;
+}
+
+
+
+/* Attempts to resolve a given symbol to it's value. Returns nonzero on
+** success, filling in 'val' with the value of the symbol. Otherwise it
+** returns zero, and does not alter 'val'. This may be used to attempt to
+** pre-resolve symbols for optimizing instruction sizes where possible. */
+auint symtab_resolvesym(symtab_t* hnd, auint id, auint* val)
+{
+ auint r;
+
+ /* Note: faults printed during resolution will be ignored here, just causing
+ ** the symbol not being resolved. They will halt the compile later when the
+ ** full resolution is attempted. Not nice, but passes. */
+
+ auint t = symtab_recres(hnd->def, id, hnd->dct, 0U, &r);
+ if (t == 0U){
+  *val = r;
+  return 1U;
+ }else{
+  return 0U;
+ }
 }
 
 
