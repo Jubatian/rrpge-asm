@@ -181,3 +181,13 @@ us_dbuf_addframehook	equ	0xF064
 us_dbuf_remframehook	equ	0xF066
 us_dbuf_setsurface	equ	0xF068
 us_dbuf_getsurface	equ	0xF06A
+us_sprite_reset		equ	0xF06C
+us_smux_reset		equ	0xF06E
+us_sprite_setbounds	equ	0xF070
+us_smux_setbounds	equ	0xF072
+us_sprite_add		equ	0xF074
+us_smux_add		equ	0xF076
+us_sprite_addxy		equ	0xF078
+us_smux_addxy		equ	0xF07A
+us_sprite_addlist	equ	0xF07C
+us_smux_addlist		equ	0xF07E

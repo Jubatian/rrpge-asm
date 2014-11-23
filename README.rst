@@ -314,3 +314,7 @@ Register in first operand, special in second operand opcode forms are not
 supported such as "mov a, xm" since this case the assembler assumes the second
 operand to be an addressing mode specification (only allowing the eight
 general purpose registers).
+
+A global label should be specified before any local label or equ. Otherwise
+the local symbol without parent will match any other local symbol with the
+same name (both inheriting the same parent when comparing).
