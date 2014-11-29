@@ -191,3 +191,11 @@ us_sprite_addxy		equ	0xF078
 us_smux_addxy		equ	0xF07A
 us_sprite_addlist	equ	0xF07C
 us_smux_addlist		equ	0xF07E
+us_sin			equ	0xF080
+us_cos			equ	0xF082
+us_sincos		equ	0xF084
+us_tfreq		equ	0xF086
+us_mul32		equ	0xF088
+us_div32		equ	0xF08A
+us_rec16		equ	0xF08C
+us_rec32		equ	0xF08E
