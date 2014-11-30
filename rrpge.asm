@@ -199,3 +199,5 @@ us_mul32		equ	0xF088
 us_div32		equ	0xF08A
 us_rec16		equ	0xF08C
 us_rec32		equ	0xF08E
+us_sqrt16		equ	0xF090
+us_sqrt32		equ	0xF092
