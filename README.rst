@@ -2,6 +2,10 @@
 RRPGE Assembler
 ==============================================================================
 
+.. image:: https://cdn.rawgit.com/Jubatian/rrpge-spec/00.013.002/logo_txt.svg
+   :align: center
+   :width: 100%
+
 :Author:    Sandor Zsuga (Jubatian)
 :Copyright: 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
             License) extended as RRPGEvt (temporary version of the RRPGE
@@ -25,6 +29,16 @@ pass.
 
 The third pass is used to apply binary data includes to complete the
 application image.
+
+
+Related projects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- RRPGE home: http://www.rrpge.org
+- RRPGE Specification: https://www.github.com/Jubatian/rrpge-spec
+- RRPGE Emulator & Library: https://www.github.com/Jubatian/rrpge-libminimal
+- RRPGE User Library: https://www.github.com/Jubatian/rrpge-userlib
+- Example programs: https://www.github.com/Jubatian/rrpge-examples
 
 
 Temporary license notes
