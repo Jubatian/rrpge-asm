@@ -229,6 +229,12 @@ us_tmap_gettilehw	equ	0xF0C0
 us_tmap_gettile		equ	0xF0C2
 us_tmap_settile		equ	0xF0C4
 us_tmap_setptr		equ	0xF0C6
+us_fastmap_set		equ	0xF0C8
+us_fastmap_mark		equ	0xF0CA
+us_fastmap_gethw	equ	0xF0CC
+us_fastmap_getyx	equ	0xF0CE
+us_fastmap_setdly	equ	0xF0D0
+us_fastmap_draw		equ	0xF0D2
 
 ;
 ; User Library locations (pointers)

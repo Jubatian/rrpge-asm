@@ -6,8 +6,8 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.01.10
+**  \date      2014.01.23
 */
 
 
-#define ASSEMBLER_VERSION "00.015.002-00"
+#define ASSEMBLER_VERSION "00.015.003-00"
