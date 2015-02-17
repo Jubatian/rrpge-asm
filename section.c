@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.22
+**  \date      2015.02.17
 **
 **  Manages the sections and their data during the compilation. Currently
 **  singleton, but desinged so it is possible to extend later.
@@ -178,7 +178,14 @@ void  section_setoffw(section_t* hnd, auint off)
 /* Gets word offset for a subsequent use with section_setw(). */
 auint section_getoffw(section_t* hnd)
 {
- return (hnd->p[hnd->s]); /* Byte offset simply ignored */
+ auint s = hnd->s;
+
+ if (hnd->b[s] != 0U){ /* Need to advance to next word (partially used word) */
+  hnd->p[s] ++;
+  hnd->b[s] = 0U;
+ }
+
+ return (hnd->p[s]);
 }
 
 
