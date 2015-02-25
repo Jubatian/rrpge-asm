@@ -318,16 +318,8 @@ Bugs
 There are several things untested in there, however the most important parts
 should be functional.
 
-For relative jumps and calls (JMR and JFR), immediates are not encoded in
-relative, however JMS is encoded correctly with a relative immediate address.
-
 No FILE section support yet. First literal arithmetic has to be implemented to
 make it useful (so it is possible to load the 32 bit offset values).
-
-Register in first operand, special in second operand opcode forms are not
-supported such as "mov a, xm" since this case the assembler assumes the second
-operand to be an addressing mode specification (only allowing the eight
-general purpose registers).
 
 A global label should be specified before any local label or equ. Otherwise
 the local symbol without parent will match any other local symbol with the

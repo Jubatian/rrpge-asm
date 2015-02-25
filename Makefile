@@ -25,9 +25,9 @@ CFLAGS+=
 
 OBJECTS= $(OBD)main.o
 OBJECTS+=$(OBD)bindata.o $(OBD)compst.o  $(OBD)fault.o   $(OBD)firead.o
-OBJECTS+=$(OBD)incstk.o  $(OBD)litpr.o   $(OBD)opcpr.o   $(OBD)pass1.o
-OBJECTS+=$(OBD)pass2.o   $(OBD)pass3.o   $(OBD)ps1sup.o  $(OBD)section.o
-OBJECTS+=$(OBD)strpr.o   $(OBD)symtab.o  $(OBD)valwr.o
+OBJECTS+=$(OBD)incstk.o  $(OBD)litpr.o   $(OBD)opcdec.o  $(OBD)opcpr.o
+OBJECTS+=$(OBD)pass1.o   $(OBD)pass2.o   $(OBD)pass3.o   $(OBD)ps1sup.o
+OBJECTS+=$(OBD)section.o $(OBD)strpr.o   $(OBD)symtab.o  $(OBD)valwr.o
 
 
 all: $(OUT)
@@ -62,6 +62,9 @@ $(OBD)incstk.o: incstk.c *.h
 
 $(OBD)litpr.o: litpr.c *.h
 	$(CC) -c litpr.c -o $(OBD)litpr.o $(CFSIZ)
+
+$(OBD)opcdec.o: opcdec.c *.h
+	$(CC) -c opcdec.c -o $(OBD)opcdec.o $(CFSIZ)
 
 $(OBD)opcpr.o: opcpr.c *.h
 	$(CC) -c opcpr.c -o $(OBD)opcpr.o $(CFSIZ)
