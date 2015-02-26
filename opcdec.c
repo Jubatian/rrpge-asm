@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.02.25
+**  \date      2015.02.26
 */
 
 
@@ -517,11 +517,11 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("and"))){
 
-  r = opcdec_dec(stb, ods, 0x4400U | OPCDEC_I_R);
+  r = opcdec_dec(stb, ods, 0x8800U | OPCDEC_I_R);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("asr"))){
 
-  r = opcdec_dec(stb, ods, 0x3400U | OPCDEC_I_R | OPCDEC_I_RC);
+  r = opcdec_dec(stb, ods, 0x3000U | OPCDEC_I_R | OPCDEC_I_RC);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("btc"))){
 
@@ -561,7 +561,7 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("mac"))){
 
-  r = opcdec_dec(stb, ods, 0x3000U | OPCDEC_I_R | OPCDEC_I_RC);
+  r = opcdec_dec(stb, ods, 0x3400U | OPCDEC_I_R | OPCDEC_I_RC);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("mov"))){
 
@@ -569,11 +569,11 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("mul"))){
 
-  r = opcdec_dec(stb, ods, 0x2000U | OPCDEC_I_R | OPCDEC_I_RC);
+  r = opcdec_dec(stb, ods, 0x2400U | OPCDEC_I_R | OPCDEC_I_RC);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("neg"))){
 
-  r = opcdec_dec(stb, ods, 0x6400U | OPCDEC_I_R);
+  r = opcdec_dec(stb, ods, 0x6000U | OPCDEC_I_R);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("nop"))){
 
@@ -581,11 +581,11 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("not"))){
 
-  r = opcdec_dec(stb, ods, 0x2400U | OPCDEC_I_R);
+  r = opcdec_dec(stb, ods, 0x2000U | OPCDEC_I_R);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("or" ))){
 
-  r = opcdec_dec(stb, ods, 0x4000U | OPCDEC_I_R);
+  r = opcdec_dec(stb, ods, 0x1000U | OPCDEC_I_R);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("rfn"))){
 
@@ -597,19 +597,19 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("shl"))){
 
-  r = opcdec_dec(stb, ods, 0x2800U | OPCDEC_I_R | OPCDEC_I_RC);
+  r = opcdec_dec(stb, ods, 0x2C00U | OPCDEC_I_R | OPCDEC_I_RC);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("shr"))){
 
-  r = opcdec_dec(stb, ods, 0x2C00U | OPCDEC_I_R | OPCDEC_I_RC);
+  r = opcdec_dec(stb, ods, 0x2800U | OPCDEC_I_R | OPCDEC_I_RC);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("slc"))){
 
-  r = opcdec_dec(stb, ods, 0x3800U | OPCDEC_I_R | OPCDEC_I_RC);
+  r = opcdec_dec(stb, ods, 0x3C00U | OPCDEC_I_R | OPCDEC_I_RC);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("src"))){
 
-  r = opcdec_dec(stb, ods, 0x3C00U | OPCDEC_I_R | OPCDEC_I_RC);
+  r = opcdec_dec(stb, ods, 0x3800U | OPCDEC_I_R | OPCDEC_I_RC);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("sub"))){
 
@@ -625,15 +625,15 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xch"))){
 
-  r = opcdec_dec(stb, ods, 0x1000U | OPCDEC_I_RS);
+  r = opcdec_dec(stb, ods, 0x0400U | OPCDEC_I_RS);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xeq"))){
 
-  r = opcdec_dec(stb, ods, 0xB000U | OPCDEC_I_RS);
+  r = opcdec_dec(stb, ods, 0xB800U | OPCDEC_I_RS);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xne"))){
 
-  r = opcdec_dec(stb, ods, 0xB800U | OPCDEC_I_RS);
+  r = opcdec_dec(stb, ods, 0xBA00U | OPCDEC_I_RS);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xor"))){
 

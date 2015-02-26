@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.02.25
+**  \date      2015.02.26
 */
 
 
@@ -335,7 +335,7 @@ static auint opcpr_imov(symtab_t* stb, opcdec_ds_t* ods)
    v = adr & 0xFFFFU;              /* Value to encode */
 
    if (v >= 0xFFF0U){              /* NOT rx, adr */
-    section_setw(sec, off, 0x2400U | (((reg >> OPCDEC_S_ADR) & 0x7U) << 6) | (~v));
+    section_setw(sec, off, 0x2000U | (((reg >> OPCDEC_S_ADR) & 0x7U) << 6) | (~v));
     return 1U;
    }
 
@@ -356,7 +356,7 @@ static auint opcpr_imov(symtab_t* stb, opcdec_ds_t* ods)
 
  if ((reg & (OPCDEC_E_XM0 | OPCDEC_E_XM1 | OPCDEC_E_XM2 | OPCDEC_E_XM3 |
              OPCDEC_E_XH0 | OPCDEC_E_XH1 | OPCDEC_E_XH2 | OPCDEC_E_XH3)) != 0U){
-  section_setw(sec, off, 0x0400U | ((reg & 0x7U) << 6));
+  section_setw(sec, off, 0x4000U | ((reg & 0x7U) << 6));
   return opcpr_addr(stb, adr, VALWR_A16);
  }
 
@@ -389,7 +389,7 @@ static auint opcpr_ijms(symtab_t* stb, opcdec_ds_t* ods)
 
  /* Encode */
 
- if (opcpr_pushw(stb, 0x8400U) == 0U){ return 0U; }
+ if (opcpr_pushw(stb, 0x8C00U) == 0U){ return 0U; }
  if ((opv & OPCDEC_O_SYM) != 0U){
   if (symtab_use(stb, opv & 0xFFFFFFU, off, VALWR_R10)){ return 0U; }
  }else{
@@ -411,7 +411,7 @@ static auint opcpr_ijmr(symtab_t* stb, opcdec_ds_t* ods)
 
  /* Encode */
 
- if (opcpr_pushw(stb, 0x8C00U) == 0U){ return 0U; }
+ if (opcpr_pushw(stb, 0x8400U) == 0U){ return 0U; }
  return opcpr_addr(stb, ods->op[0], VALWR_R16);
 }
 
@@ -428,7 +428,7 @@ static auint opcpr_ijma(symtab_t* stb, opcdec_ds_t* ods)
 
  /* Encode */
 
- if (opcpr_pushw(stb, 0x8D00U) == 0U){ return 0U; }
+ if (opcpr_pushw(stb, 0x8500U) == 0U){ return 0U; }
  return opcpr_addr(stb, ods->op[0], VALWR_A16);
 }
 
@@ -465,7 +465,7 @@ static auint opcpr_ijfr(symtab_t* stb, opcdec_ds_t* ods)
 
  /* Encode opcode */
 
- if (opcpr_pushw(stb, 0x8800U) == 0U){ return 0U; }
+ if (opcpr_pushw(stb, 0x4400U) == 0U){ return 0U; }
  if (opcpr_addr(stb, ods->op[0], VALWR_R16) == 0U){ return 0U; }
 
  /* Encode parameters */
@@ -488,7 +488,7 @@ static auint opcpr_ijfa(symtab_t* stb, opcdec_ds_t* ods)
 
  /* Encode opcode */
 
- if (opcpr_pushw(stb, 0x8900U) == 0U){ return 0U; }
+ if (opcpr_pushw(stb, 0x4500U) == 0U){ return 0U; }
  if (opcpr_addr(stb, ods->op[0], VALWR_A16) == 0U){ return 0U; }
 
  /* Encode parameters */
@@ -511,7 +511,7 @@ static auint opcpr_ijsv(symtab_t* stb, opcdec_ds_t* ods)
 
  /* Encode opcode */
 
- if (opcpr_pushw(stb, 0x8880U) == 0U){ return 0U; }
+ if (opcpr_pushw(stb, 0x4480U) == 0U){ return 0U; }
 
  /* Encode parameters */
 
@@ -531,7 +531,7 @@ static auint opcpr_irfn(symtab_t* stb, opcdec_ds_t* ods)
 
  /* Encode */
 
- return opcpr_pushw(stb, 0x8980U);
+ return opcpr_pushw(stb, 0x4580U);
 }
 
 
