@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.02.25
+**  \date      2015.02.27
 */
 
 
@@ -46,6 +46,8 @@ typedef struct{
 /* Carry destination request. Indicates that the instruction contained a carry
 ** target ("c:"). */
 #define OPCDEC_I_C     0x100000U
+/* Opcode mask */
+#define OPCDEC_I_MASK  0xFFFFU
 /* Null: no instruction to be encoded */
 #define OPCDEC_I_NUL   0U
 /* NOP */
@@ -66,8 +68,12 @@ typedef struct{
 #define OPCDEC_I_JSV   8U
 /* RFN */
 #define OPCDEC_I_RFN   9U
-/* Note: The ADD SP, adr and the SUB SP, adr instructions are not supported as
-** they are going to be replaced in 00.016.000 to different instructions. */
+/* XEQ */
+#define OPCDEC_I_XEQ  10U
+/* XNE */
+#define OPCDEC_I_XNE  11U
+/* XUG */
+#define OPCDEC_I_XUG  12U
 
 
 /* Operand and parameter formatting */

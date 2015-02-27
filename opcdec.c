@@ -629,11 +629,15 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xeq"))){
 
-  r = opcdec_dec(stb, ods, 0xB800U | OPCDEC_I_RS);
+  r = opcdec_dec(stb, ods, OPCDEC_I_XEQ);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xne"))){
 
-  r = opcdec_dec(stb, ods, 0xBA00U | OPCDEC_I_RS);
+  r = opcdec_dec(stb, ods, OPCDEC_I_XNE);
+
+ }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xns"))){
+
+  r = opcdec_dec(stb, ods, 0xB200U | OPCDEC_I_RS);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xor"))){
 
@@ -643,9 +647,13 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
 
   r = opcdec_dec(stb, ods, 0xB400U | OPCDEC_I_R);
 
+ }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xst"))){
+
+  r = opcdec_dec(stb, ods, 0xB000U | OPCDEC_I_RS);
+
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xug"))){
 
-  r = opcdec_dec(stb, ods, 0xBC00U | OPCDEC_I_R);
+  r = opcdec_dec(stb, ods, OPCDEC_I_XUG);
 
  }else{
 

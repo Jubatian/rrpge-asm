@@ -464,19 +464,45 @@ static auint opcpr_ijms(symtab_t* stb, opcdec_ds_t* ods)
 
 
 
-/* Encode JMR. May produce fault. Returns nonzero (TRUE) on success. */
-static auint opcpr_ijmr(symtab_t* stb, opcdec_ds_t* ods)
+/* JMR / JMA common encoder */
+static auint opcpr_ijmp(symtab_t* stb, opcdec_ds_t* ods, auint msk, auint use)
 {
+ compst_t*    cst = symtab_getcompst(stb);
+ auint rt;
+
  /* Check count of parameters and operands */
 
  if (opcpr_nofunc(stb, ods) == 0U){ return 0U; }
- if (opcpr_opcount(stb, ods, 1U) == 0U){ return 0U; }
  if (opcpr_nocy(stb, ods) == 0U){ return 0U; }
+
+ /* If it has 1 parameter, simply encode */
+
+ if (ods->opc == 1U){
+  if (opcpr_pushw(stb, msk) == 0U){ return 0U; }
+  return opcpr_addr(stb, ods->op[0], use);
+ }
+
+ /* Must have 2 operands, and first one must be B, C or D */
+
+ if (opcpr_opcount(stb, ods, 2U) == 0U){ return 0U; }
+ rt = (ods->op[0] >> OPCDEC_S_ADR) & 0x3FU;
+ if ((rt != 0x31U) && (rt != 0x32U) && (rt != 0x33U)){
+  fault_printat(FAULT_FAIL, (uint8 const*)("Target must be B, C or D"), cst);
+  return 0U;
+ }
 
  /* Encode */
 
- if (opcpr_pushw(stb, 0x8400U) == 0U){ return 0U; }
- return opcpr_addr(stb, ods->op[0], VALWR_R16);
+ if (opcpr_pushw(stb, msk | ((rt & 0x3U) << 6)) == 0U){ return 0U; }
+ return opcpr_addr(stb, ods->op[0], use);
+}
+
+
+
+/* Encode JMR. May produce fault. Returns nonzero (TRUE) on success. */
+static auint opcpr_ijmr(symtab_t* stb, opcdec_ds_t* ods)
+{
+ return opcpr_ijmp(stb, ods, 0x8400U, VALWR_R16);
 }
 
 
@@ -484,16 +510,7 @@ static auint opcpr_ijmr(symtab_t* stb, opcdec_ds_t* ods)
 /* Encode JMA. May produce fault. Returns nonzero (TRUE) on success. */
 static auint opcpr_ijma(symtab_t* stb, opcdec_ds_t* ods)
 {
- /* Check count of parameters and operands */
-
- if (opcpr_nofunc(stb, ods) == 0U){ return 0U; }
- if (opcpr_opcount(stb, ods, 1U) == 0U){ return 0U; }
- if (opcpr_nocy(stb, ods) == 0U){ return 0U; }
-
- /* Encode */
-
- if (opcpr_pushw(stb, 0x8500U) == 0U){ return 0U; }
- return opcpr_addr(stb, ods->op[0], VALWR_A16);
+ return opcpr_ijmp(stb, ods, 0x8500U, VALWR_A16);
 }
 
 
@@ -539,8 +556,8 @@ static auint opcpr_fnpar(symtab_t* stb, opcdec_ds_t* ods, auint off)
 
 
 
-/* Encode JFR. May produce fault. Returns nonzero (TRUE) on success. */
-static auint opcpr_ijfr(symtab_t* stb, opcdec_ds_t* ods)
+/* JFR / JFA common encoder */
+static auint opcpr_ijfn(symtab_t* stb, opcdec_ds_t* ods, auint msk, auint use)
 {
  section_t*   sec = symtab_getsectob(stb);
  auint  off = section_getoffw(sec);
@@ -552,8 +569,8 @@ static auint opcpr_ijfr(symtab_t* stb, opcdec_ds_t* ods)
 
  /* Encode opcode */
 
- if (opcpr_pushw(stb, 0x4400U) == 0U){ return 0U; }
- if (opcpr_addr(stb, ods->op[0], VALWR_R16) == 0U){ return 0U; }
+ if (opcpr_pushw(stb, msk) == 0U){ return 0U; }
+ if (opcpr_addr(stb, ods->op[0], use) == 0U){ return 0U; }
 
  /* Encode parameters */
 
@@ -562,25 +579,18 @@ static auint opcpr_ijfr(symtab_t* stb, opcdec_ds_t* ods)
 
 
 
+/* Encode JFR. May produce fault. Returns nonzero (TRUE) on success. */
+static auint opcpr_ijfr(symtab_t* stb, opcdec_ds_t* ods)
+{
+ return opcpr_ijfn(stb, ods, 0x4400U, VALWR_R16);
+}
+
+
+
 /* Encode JFA. May produce fault. Returns nonzero (TRUE) on success. */
 static auint opcpr_ijfa(symtab_t* stb, opcdec_ds_t* ods)
 {
- section_t*   sec = symtab_getsectob(stb);
- auint  off = section_getoffw(sec);
-
- /* Check count of parameters and operands */
-
- if (opcpr_opcount(stb, ods, 1U) == 0U){ return 0U; }
- if (opcpr_nocy(stb, ods) == 0U){ return 0U; }
-
- /* Encode opcode */
-
- if (opcpr_pushw(stb, 0x4500U) == 0U){ return 0U; }
- if (opcpr_addr(stb, ods->op[0], VALWR_A16) == 0U){ return 0U; }
-
- /* Encode parameters */
-
- return opcpr_fnpar(stb, ods, off);
+ return opcpr_ijfn(stb, ods, 0x4500U, VALWR_A16);
 }
 
 
@@ -610,15 +620,112 @@ static auint opcpr_ijsv(symtab_t* stb, opcdec_ds_t* ods)
 /* Encode RFN. May produce fault. Returns nonzero (TRUE) on success. */
 static auint opcpr_irfn(symtab_t* stb, opcdec_ds_t* ods)
 {
+ compst_t*    cst = symtab_getcompst(stb);
+ section_t*   sec = symtab_getsectob(stb);
+ auint  off = section_getoffw(sec);
+
  /* Check count of parameters and operands */
 
  if (opcpr_nofunc(stb, ods) == 0U){ return 0U; }
- if (opcpr_opcount(stb, ods, 0U) == 0U){ return 0U; }
- if (opcpr_nocy(stb, ods) == 0U){ return 0U; }
+
+ /* If it has no operand, then encode RFN x3, x3 */
+
+ if (ods->opc == 0U){ return opcpr_pushw(stb, 0x45B7U); }
+
+ /* Otherwise needs 2 operands, first being x3 */
+
+ if (opcpr_opcount(stb, ods, 2U) == 0U){ return 0U; }
+ if (((ods->op[0] >> OPCDEC_S_ADR) & 0x3FU) != 0x37U){
+  fault_printat(FAULT_FAIL, (uint8 const*)("Target must be X3"), cst);
+  return 0U;
+ }
 
  /* Encode */
 
- return opcpr_pushw(stb, 0x4580U);
+ if (opcpr_pushw(stb, 0x4580U) == 0U){ return 0U; }
+ if (((ods->id) & OPCDEC_I_C) != 0U){
+  section_setw(sec, off, 0x0040U);
+ }
+ return opcpr_addr(stb, ods->op[1], VALWR_A16);
+}
+
+
+
+/* Skip common encoder for SP specials: msk0 is the normal opcode mask, msk1
+** is the SP special mask, and swp indicates whether operands should be
+** swapped. */
+static auint opcpr_ixxx(symtab_t* stb, opcdec_ds_t* ods, auint msk0, auint msk1, auint swp)
+{
+ compst_t*    cst = symtab_getcompst(stb);
+ section_t*   sec = symtab_getsectob(stb);
+ auint  off = section_getoffw(sec);
+ auint  reg;
+ auint  adr;
+
+ /* Check count of parameters and operands */
+
+ if (opcpr_nofunc(stb, ods) == 0U){ return 0U; }
+ if (opcpr_opcount(stb, ods, 2U) == 0U){ return 0U; }
+ if (opcpr_nocy(stb, ods) == 0U){ return 0U; }
+
+ reg = ods->op[1];
+ adr = ods->op[0];
+
+ /* Check for SP special */
+
+ if ( (((reg >> OPCDEC_S_ADR) & 0x3FU) != OPCDEC_A_SPC) &&
+      (((adr >> OPCDEC_S_ADR) & 0x3FU) != OPCDEC_A_SPC) ){ /* No special reg. */
+
+  /* No special: Encode ordinary skip */
+
+  if (opcpr_pushw(stb, msk0) == 0U){ return 0U; }
+  return opcpr_eops(stb, ods, swp);
+
+ }
+
+ /* Pre-encode opcode */
+
+ if (opcpr_pushw(stb, msk1) == 0U){ return 0U; }
+
+ /* Select between the two possible orders */
+
+ if ((reg >> OPCDEC_S_ADR) != OPCDEC_A_SPC){
+  if (swp){ section_setw(sec, off, 0x0200U); }  /* "rx, adr" order */
+  reg = ods->op[0];
+  adr = ods->op[1];
+  if ((reg & (OPCDEC_E_SP)) == 0U){
+   fault_printat(FAULT_FAIL, (uint8 const*)("Special register operand must be SP"), cst);
+   return 0U;
+  }
+ }
+
+ /* Add address operand */
+
+ return opcpr_addr(stb, adr, VALWR_A16);
+}
+
+
+
+/* Encode XEQ. May produce fault. Returns nonzero (TRUE) on success. */
+static auint opcpr_ixeq(symtab_t* stb, opcdec_ds_t* ods)
+{
+ return opcpr_ixxx(stb, ods, 0xB800U, 0x8140U, 0U);
+}
+
+
+
+/* Encode XNE. May produce fault. Returns nonzero (TRUE) on success. */
+static auint opcpr_ixne(symtab_t* stb, opcdec_ds_t* ods)
+{
+ return opcpr_ixxx(stb, ods, 0xBA00U, 0x8340U, 0U);
+}
+
+
+
+/* Encode XUG. May produce fault. Returns nonzero (TRUE) on success. */
+static auint opcpr_ixug(symtab_t* stb, opcdec_ds_t* ods)
+{
+ return opcpr_ixxx(stb, ods, 0xBC00U, 0x8100U, 1U);
 }
 
 
@@ -646,7 +753,7 @@ auint opcpr_proc(symtab_t* stb)
  }else if ((ods.id & OPCDEC_I_RS) != 0U){
   r = opcpr_irs(stb, &ods);
  }else{
-  switch (ods.id){
+  switch (ods.id & OPCDEC_I_MASK){
    case OPCDEC_I_NOP: r = opcpr_inop(stb, &ods); break;
    case OPCDEC_I_MOV: r = opcpr_imov(stb, &ods); break;
    case OPCDEC_I_JMS: r = opcpr_ijms(stb, &ods); break;
@@ -656,6 +763,9 @@ auint opcpr_proc(symtab_t* stb)
    case OPCDEC_I_JFA: r = opcpr_ijfa(stb, &ods); break;
    case OPCDEC_I_JSV: r = opcpr_ijsv(stb, &ods); break;
    case OPCDEC_I_RFN: r = opcpr_irfn(stb, &ods); break;
+   case OPCDEC_I_XEQ: r = opcpr_ixeq(stb, &ods); break;
+   case OPCDEC_I_XNE: r = opcpr_ixne(stb, &ods); break;
+   case OPCDEC_I_XUG: r = opcpr_ixug(stb, &ods); break;
    default: break;
   }
  }
