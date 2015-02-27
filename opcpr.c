@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.02.26
+**  \date      2015.02.27
 */
 
 
@@ -268,6 +268,37 @@ static auint opcpr_inop(symtab_t* stb, opcdec_ds_t* ods)
 
 
 
+/* MOV rx, imx table for 0000 011r rrpq iiii */
+static const uint16 opcpr_mov_tb0[64] = {
+ 0x0000U, 0x0010U, 0x0020U, 0x0030U, 0x0040U, 0x0050U, 0x0060U, 0x0070U,
+ 0x0080U, 0x0090U, 0x00A0U, 0x00B0U, 0x00C0U, 0x00D0U, 0x00E0U, 0x00F0U,
+ 0x000FU, 0x001FU, 0x002FU, 0x003FU, 0x004FU, 0x005FU, 0x006FU, 0x007FU,
+ 0x008FU, 0x009FU, 0x00AFU, 0x00BFU, 0x00CFU, 0x00DFU, 0x00EFU, 0x00FFU,
+ 0xFF00U, 0xFF10U, 0xFF20U, 0xFF30U, 0xFF40U, 0xFF50U, 0xFF60U, 0xFF70U,
+ 0xFF80U, 0xFF90U, 0xFFA0U, 0xFFB0U, 0xFFC0U, 0xFFD0U, 0xFFE0U, 0xFFF0U,
+ 0xFF0FU, 0xFF1FU, 0xFF2FU, 0xFF3FU, 0xFF4FU, 0xFF5FU, 0xFF6FU, 0xFF7FU,
+ 0xFF8FU, 0xFF9FU, 0xFFAFU, 0xFFBFU, 0xFFCFU, 0xFFDFU, 0xFFEFU, 0xFFFFU};
+/* MOV rx, imx table for 0100 011r rrpq iiii */
+static const uint16 opcpr_mov_tb1[64] = {
+ 0x0000U, 0x0100U, 0x0200U, 0x0300U, 0x0400U, 0x0500U, 0x0600U, 0x0700U,
+ 0x0800U, 0x0900U, 0x0A00U, 0x0B00U, 0x0C00U, 0x0D00U, 0x0E00U, 0x0F00U,
+ 0x00FFU, 0x01FFU, 0x02FFU, 0x03FFU, 0x04FFU, 0x05FFU, 0x06FFU, 0x07FFU,
+ 0x08FFU, 0x09FFU, 0x0AFFU, 0x0BFFU, 0x0CFFU, 0x0DFFU, 0x0EFFU, 0x0FFFU,
+ 0xF000U, 0xF100U, 0xF200U, 0xF300U, 0xF400U, 0xF500U, 0xF600U, 0xF700U,
+ 0xF800U, 0xF900U, 0xFA00U, 0xFB00U, 0xFC00U, 0xFD00U, 0xFE00U, 0xFF00U,
+ 0xF0FFU, 0xF1FFU, 0xF2FFU, 0xF3FFU, 0xF4FFU, 0xF5FFU, 0xF6FFU, 0xF7FFU,
+ 0xF8FFU, 0xF9FFU, 0xFAFFU, 0xFBFFU, 0xFCFFU, 0xFDFFU, 0xFEFFU, 0xFFFFU};
+/* MOV rx, imx table for 1100 011r rrpq iiii */
+static const uint16 opcpr_mov_tb2[64] = {
+ 0x0000U, 0x1000U, 0x2000U, 0x3000U, 0x4000U, 0x5000U, 0x6000U, 0x7000U,
+ 0x8000U, 0x9000U, 0xA000U, 0xB000U, 0xC000U, 0xD000U, 0xE000U, 0xF000U,
+ 0x0FFFU, 0x1FFFU, 0x2FFFU, 0x3FFFU, 0x4FFFU, 0x5FFFU, 0x6FFFU, 0x7FFFU,
+ 0x8FFFU, 0x9FFFU, 0xAFFFU, 0xBFFFU, 0xCFFFU, 0xDFFFU, 0xEFFFU, 0xFFFFU,
+ 0x0010U, 0x0011U, 0x0012U, 0x0013U, 0x0014U, 0x0015U, 0x0016U, 0x0017U,
+ 0x0018U, 0x0019U, 0x001AU, 0x001BU, 0x001CU, 0x001DU, 0x001EU, 0x001FU,
+ 0x0280U, 0x0028U, 0x0064U, 0x0078U, 0x03E8U, 0x00C8U, 0x2710U, 0x0118U,
+ 0x0140U, 0x0168U, 0x0190U, 0x01B8U, 0x01E0U, 0x0208U, 0x0230U, 0x0258U};
+
 /* Encode MOV. Many special cases. May produce fault. Returns nonzero (TRUE)
 ** on success. */
 static auint opcpr_imov(symtab_t* stb, opcdec_ds_t* ods)
@@ -278,6 +309,7 @@ static auint opcpr_imov(symtab_t* stb, opcdec_ds_t* ods)
  auint  reg;
  auint  adr;
  auint  v;
+ auint  i;
 
  /* Check count of parameters and operands */
 
@@ -339,6 +371,27 @@ static auint opcpr_imov(symtab_t* stb, opcdec_ds_t* ods)
     return 1U;
    }
 
+   for (i = 0U; i < 64U; i++){     /* MOV rx, imx (0000) */
+    if (v == opcpr_mov_tb0[i]){
+     section_setw(sec, off, 0x0600U | (((reg >> OPCDEC_S_ADR) & 0x7U) << 6) | i);
+     return 1U;
+    }
+   }
+
+   for (i = 0U; i < 64U; i++){     /* MOV rx, imx (0100) */
+    if (v == opcpr_mov_tb1[i]){
+     section_setw(sec, off, 0x4600U | (((reg >> OPCDEC_S_ADR) & 0x7U) << 6) | i);
+     return 1U;
+    }
+   }
+
+   for (i = 0U; i < 64U; i++){     /* MOV rx, imx (1100) */
+    if (v == opcpr_mov_tb2[i]){
+     section_setw(sec, off, 0x8600U | (((reg >> OPCDEC_S_ADR) & 0x7U) << 6) | i);
+     return 1U;
+    }
+   }
+
   }
 
   /* Encode ordinary MOV */
@@ -348,6 +401,17 @@ static auint opcpr_imov(symtab_t* stb, opcdec_ds_t* ods)
  }
 
  /* Special register MOVs */
+
+ if ((reg & (OPCDEC_E_SP)) != 0U){
+  if ( (((adr >> OPCDEC_S_ADR) & 0x38U) == 0x20U) &&   /* Immediate: specials here */
+       ((adr & OPCDEC_O_SYM) == 0U) ){                 /* Only if not symbol (so value present) */
+   v = adr & 0xFFFFU;
+   if (v < 128U){                  /* MOV SP, imm7 can be encoded */
+    section_setw(sec, off, 0x8380U | v);
+    return 1U;
+   }
+  }
+ }
 
  if ((reg & (OPCDEC_E_SP | OPCDEC_E_XM | OPCDEC_E_XH)) != 0U){
   section_setw(sec, off, 0x8000U | ((reg & 0x7U) << 6));
@@ -440,13 +504,36 @@ static auint opcpr_fnpar(symtab_t* stb, opcdec_ds_t* ods, auint off)
 {
  section_t*   sec = symtab_getsectob(stb);
  auint  i;
+ auint  v;
 
  for (i = 0U; i < (ods->prc); i++){
   off = section_getoffw(sec);
   if (opcpr_pushw(stb, 0xC000U) == 0U){ return 0U; }
-  if (opcpr_addr(stb, ods->pr[i], VALWR_A16) == 0U){ return 0U; }
+
+  if ( (((ods->pr[i] >> OPCDEC_S_ADR) & 0x38U) == 0x20U) && /* Immediate: specials here */
+       ((ods->pr[i] & OPCDEC_O_SYM) == 0U) ){               /* Only if not symbol (so value present) */
+
+   v = ods->pr[i] & 0xFFFFU;           /* Value to encode */
+
+   if       (v <  0x1000U){            /* Encode --1j jjjj jeii iiii */
+    section_setw(sec, off, 0x2000U | ((v & 0x0FC0U) << 1) | (v & 0x003FU));
+   }else if (v >= 0xFC00U){            /* Encode --00 1jjj jeii iiii */
+    section_setw(sec, off, 0x0800U | ((v & 0x03C0U) << 1) | (v & 0x003FU));
+   }else if ((v & 0x3FU) == 0x3FU){    /* Encode --01 1jjj jeii iiii */
+    section_setw(sec, off, 0x1800U | ((v & 0xF000U) >> 5) | ((v & 0x0FC0U) >> 6));
+   }else if ((v & 0x3FU) == 0x00U){    /* Encode --01 0jjj jeii iiii */
+    section_setw(sec, off, 0x1000U | ((v & 0xF000U) >> 5) | ((v & 0x0FC0U) >> 6));
+   }else if ((v & 0xFFU) == (v >> 8)){ /* Encode --00 01-j jeii iiii */
+    section_setw(sec, off, 0x0400U | ((v & 0x00C0U) << 1) | (v & 0x003FU));
+   }else{
+    if (opcpr_addr(stb, ods->pr[i], VALWR_A16) == 0U){ return 0U; }
+   }
+
+  }else{
+   if (opcpr_addr(stb, ods->pr[i], VALWR_A16) == 0U){ return 0U; }
+  }
  }
- section_setw(sec, off, 0x0040U); /* Terminate parameter list */
+ section_setw(sec, off, 0x0040U);      /* Terminate parameter list */
  return 1U;
 }
 
