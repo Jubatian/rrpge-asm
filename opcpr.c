@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.02.27
+**  \date      2015.02.28
 */
 
 
@@ -598,17 +598,28 @@ static auint opcpr_ijfa(symtab_t* stb, opcdec_ds_t* ods)
 /* Encode JSV. May produce fault. Returns nonzero (TRUE) on success. */
 static auint opcpr_ijsv(symtab_t* stb, opcdec_ds_t* ods)
 {
+ compst_t*    cst = symtab_getcompst(stb);
  section_t*   sec = symtab_getsectob(stb);
  auint  off = section_getoffw(sec);
+ auint  opv;
 
  /* Check count of parameters and operands */
 
- if (opcpr_opcount(stb, ods, 0U) == 0U){ return 0U; }
+ if (opcpr_opcount(stb, ods, 1U) == 0U){ return 0U; }
  if (opcpr_nocy(stb, ods) == 0U){ return 0U; }
 
  /* Encode opcode */
 
  if (opcpr_pushw(stb, 0x4480U) == 0U){ return 0U; }
+ opv = ods->op[0];
+ if ((opv & OPCDEC_O_SYM) != 0U){
+  if (symtab_use(stb, opv & 0xFFFFFFU, off, VALWR_S6)){ return 0U; }
+ }else if (((opv >> OPCDEC_S_ADR) & 0x3FU) == 0x20U){
+  if (valwr_writecs(sec, opv & 0xFFFFU, off, VALWR_S6, cst)){ return 0U; }
+ }else{
+  fault_printat(FAULT_FAIL, (const uint8*)("Invalid operand for JSV"), cst);
+  return 0U;
+ }
 
  /* Encode parameters */
 

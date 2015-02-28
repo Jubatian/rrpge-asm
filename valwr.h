@@ -2,11 +2,11 @@
 **  \file
 **  \brief     Value write-out logic
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.19
+**  \date      2015.02.28
 */
 
 
@@ -32,10 +32,12 @@
 #define VALWR_A16  4
 /* Value usage: 4 bit immediate in bit select opcode (BTS, BTC, XBS, XBC) */
 #define VALWR_B4   5
+/* Value usage: 6 bit immediate in JSV operand */
+#define VALWR_S6   6
 /* Value usage: 16 bit relative used in JMR or JFR. */
-#define VALWR_R16  6
+#define VALWR_R16  7
 /* Value usage: 10 bit relative used in JMS */
-#define VALWR_R10  7
+#define VALWR_R10  8
 
 /* Where "truncates silently" is noted, out of range values are simply bit
 ** masked. Other places if such is necessary warnings are raised. */

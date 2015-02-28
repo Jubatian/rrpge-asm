@@ -2,11 +2,11 @@
 **  \file
 **  \brief     Value write-out logic
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.22
+**  \date      2015.02.28
 */
 
 
@@ -56,6 +56,15 @@ auint valwr_write(section_t* dst, uint32 val, auint off, auint use, fault_off_t 
     fault_print(FAULT_NOTE, &s[0], fof);
    }
    section_setw(dst, off, (val & 0xFU) << 6);
+   break;
+
+  case VALWR_S6:
+   if (val > 0x3FU){
+    snprintf((char*)(&s[0]), 80U, "Operand value is too large for JSV");
+    fault_print(FAULT_FAIL, &s[0], fof);
+    return 1U;
+   }
+   section_setw(dst, off, val & 0x3FU);
    break;
 
   case VALWR_R16:
