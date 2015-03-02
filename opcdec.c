@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.02.26
+**  \date      2015.03.02
 */
 
 
@@ -492,6 +492,7 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
  uint8 const* src = compst_getsstrcoff(cst);
  auint        beg = strpr_nextnw(src, 0U);
  auint        r;
+ auint        t;
 
  ods->id = OPCDEC_I_NUL; /* No instruction */
 
@@ -647,6 +648,13 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
 
   r = opcdec_dec(stb, ods, 0xB400U | OPCDEC_I_R);
 
+ }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xsl"))){
+
+  r = opcdec_dec(stb, ods, 0xB400U | OPCDEC_I_R);
+  t = ods->op[0];          /* Swap operands (inverse of "xsg") */
+  ods->op[0] = ods->op[1];
+  ods->op[1] = t;
+
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xst"))){
 
   r = opcdec_dec(stb, ods, 0xB000U | OPCDEC_I_RS);
@@ -654,6 +662,13 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xug"))){
 
   r = opcdec_dec(stb, ods, OPCDEC_I_XUG);
+
+ }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xul"))){
+
+  r = opcdec_dec(stb, ods, OPCDEC_I_XUG);
+  t = ods->op[0];          /* Swap operands (inverse of "xug") */
+  ods->op[0] = ods->op[1];
+  ods->op[1] = t;
 
  }else{
 
