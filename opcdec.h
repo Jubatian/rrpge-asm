@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.02.27
+**  \date      2015.03.03
 */
 
 
@@ -69,11 +69,13 @@ typedef struct{
 /* RFN */
 #define OPCDEC_I_RFN   9U
 /* XEQ */
-#define OPCDEC_I_XEQ  10U
+#define OPCDEC_I_XEQ   10U
 /* XNE */
-#define OPCDEC_I_XNE  11U
+#define OPCDEC_I_XNE   11U
 /* XUG */
-#define OPCDEC_I_XUG  12U
+#define OPCDEC_I_XUG   12U
+/* JNZ */
+#define OPCDEC_I_JNZ   13U
 
 
 /* Operand and parameter formatting */

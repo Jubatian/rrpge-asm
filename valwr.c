@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.02.28
+**  \date      2015.03.03
 */
 
 
@@ -85,6 +85,19 @@ auint valwr_write(section_t* dst, uint32 val, auint off, auint use, fault_off_t 
     return 1U;
    }
    section_setw(dst, off, t & 0x03FFU);
+   break;
+
+  case VALWR_R7:
+   /* This is for nonzero jumps. It has to be determined whether the jump from
+   ** 'o' to 'val' is within the relative jump's range (-64 - 63). */
+   t = (val - off) & 0xFFFFU;
+   if ( (val > 0xFFFFU) ||
+        ( (t > 0x003FU) && (t < 0xFFC0U) ) ){
+    snprintf((char*)(&s[0]), 80U, "Nonzero jump target is out of range");
+    fault_print(FAULT_FAIL, &s[0], fof);
+    return 1U;
+   }
+   section_setw(dst, off, (t & 0x003FU) | ((t & 0x0040U) << 3));
    break;
 
   default:

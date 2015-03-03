@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.03.02
+**  \date      2015.03.03
 */
 
 
@@ -518,11 +518,11 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("and"))){
 
-  r = opcdec_dec(stb, ods, 0x8800U | OPCDEC_I_R);
+  r = opcdec_dec(stb, ods, 0xB000U | OPCDEC_I_R);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("asr"))){
 
-  r = opcdec_dec(stb, ods, 0x3000U | OPCDEC_I_R | OPCDEC_I_RC);
+  r = opcdec_dec(stb, ods, 0x1000U | OPCDEC_I_R | OPCDEC_I_RC);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("btc"))){
 
@@ -543,6 +543,10 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jfa"))){
 
   r = opcdec_dec(stb, ods, OPCDEC_I_JFA);
+
+ }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jnz"))){
+
+  r = opcdec_dec(stb, ods, OPCDEC_I_JNZ);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("jmr"))){
 
@@ -586,7 +590,7 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("or" ))){
 
-  r = opcdec_dec(stb, ods, 0x1000U | OPCDEC_I_R);
+  r = opcdec_dec(stb, ods, 0x3000U | OPCDEC_I_R);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("rfn"))){
 
@@ -636,13 +640,9 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
 
   r = opcdec_dec(stb, ods, OPCDEC_I_XNE);
 
- }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xns"))){
-
-  r = opcdec_dec(stb, ods, 0xB200U | OPCDEC_I_RS);
-
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xor"))){
 
-  r = opcdec_dec(stb, ods, 0x5000U | OPCDEC_I_R);
+  r = opcdec_dec(stb, ods, 0x7000U | OPCDEC_I_R);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xsg"))){
 
@@ -654,10 +654,6 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
   t = ods->op[0];          /* Swap operands (inverse of "xsg") */
   ods->op[0] = ods->op[1];
   ods->op[1] = t;
-
- }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xst"))){
-
-  r = opcdec_dec(stb, ods, 0xB000U | OPCDEC_I_RS);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("xug"))){
 

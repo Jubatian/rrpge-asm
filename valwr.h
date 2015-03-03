@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.02.28
+**  \date      2015.03.03
 */
 
 
@@ -38,6 +38,8 @@
 #define VALWR_R16  7
 /* Value usage: 10 bit relative used in JMS */
 #define VALWR_R10  8
+/* Value usage: 7 bit relative used in JNZ */
+#define VALWR_R7   9
 
 /* Where "truncates silently" is noted, out of range values are simply bit
 ** masked. Other places if such is necessary warnings are raised. */
