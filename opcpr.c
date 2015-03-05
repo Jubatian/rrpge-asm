@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.02.28
+**  \date      2015.03.05
 */
 
 
@@ -413,13 +413,13 @@ static auint opcpr_imov(symtab_t* stb, opcdec_ds_t* ods)
   }
  }
 
- if ((reg & (OPCDEC_E_SP | OPCDEC_E_XM | OPCDEC_E_XH)) != 0U){
+ if ((reg & (OPCDEC_E_SP | OPCDEC_E_XM | OPCDEC_E_XB)) != 0U){
   section_setw(sec, off, 0x8000U | ((reg & 0x7U) << 6));
   return opcpr_addr(stb, adr, VALWR_A16);
  }
 
  if ((reg & (OPCDEC_E_XM0 | OPCDEC_E_XM1 | OPCDEC_E_XM2 | OPCDEC_E_XM3 |
-             OPCDEC_E_XH0 | OPCDEC_E_XH1 | OPCDEC_E_XH2 | OPCDEC_E_XH3)) != 0U){
+             OPCDEC_E_XB0 | OPCDEC_E_XB1 | OPCDEC_E_XB2 | OPCDEC_E_XB3)) != 0U){
   section_setw(sec, off, 0x4000U | ((reg & 0x7U) << 6));
   return opcpr_addr(stb, adr, VALWR_A16);
  }
@@ -458,6 +458,48 @@ static auint opcpr_ijms(symtab_t* stb, opcdec_ds_t* ods)
   if (symtab_use(stb, opv & 0xFFFFFFU, off, VALWR_R10)){ return 0U; }
  }else{
   if (valwr_writecs(sec, opv & 0xFFFFU, off, VALWR_R10, cst)){ return 0U; }
+ }
+ return 1U;
+}
+
+
+
+/* Encode JNZ. May produce fault. Returns nonzero (TRUE) on success. */
+static auint opcpr_ijnz(symtab_t* stb, opcdec_ds_t* ods)
+{
+ section_t*   sec = symtab_getsectob(stb);
+ compst_t*    cst = symtab_getcompst(stb);
+ auint  off = section_getoffw(sec);
+ auint  op0 = (ods->op[0]);
+ auint  op1 = (ods->op[1]);
+
+ /* Check count of parameters and operands */
+
+ if (opcpr_nofunc(stb, ods) == 0U){ return 0U; }
+ if (opcpr_opcount(stb, ods, 2U) == 0U){ return 0U; }
+ if (opcpr_nocy(stb, ods) == 0U){ return 0U; }
+
+ /* Check operand 0: must be a register */
+
+ if (((op0 >> OPCDEC_S_ADR) & 0x38U) != 0x30U){
+  fault_printat(FAULT_FAIL, (uint8 const*)("First operand must be register"), cst);
+  return 0U;
+ }
+
+ /* Check operand 1: must be an immediate */
+
+ if (((op1 >> OPCDEC_S_ADR) & 0x38U) != 0x20U){
+  fault_printat(FAULT_FAIL, (uint8 const*)("Second operand must be immediate"), cst);
+  return 0U;
+ }
+
+ /* Encode */
+
+ if (opcpr_pushw(stb, 0x8800U | (((op0 >> OPCDEC_S_ADR) & 0x7U) << 6)) == 0U){ return 0U; }
+ if ((op1 & OPCDEC_O_SYM) != 0U){
+  if (symtab_use(stb, op1 & 0xFFFFFFU, off, VALWR_R7)){ return 0U; }
+ }else{
+  if (valwr_writecs(sec, op1 & 0xFFFFU, off, VALWR_R7, cst)){ return 0U; }
  }
  return 1U;
 }
@@ -777,6 +819,7 @@ auint opcpr_proc(symtab_t* stb)
    case OPCDEC_I_XEQ: r = opcpr_ixeq(stb, &ods); break;
    case OPCDEC_I_XNE: r = opcpr_ixne(stb, &ods); break;
    case OPCDEC_I_XUG: r = opcpr_ixug(stb, &ods); break;
+   case OPCDEC_I_JNZ: r = opcpr_ijnz(stb, &ods); break;
    default: break;
   }
  }

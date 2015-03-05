@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.03.03
+**  \date      2015.03.05
 */
 
 
@@ -112,7 +112,7 @@ static auint opcdec_sp(uint8 const* src, auint beg)
 
 
 
-/* Decodes pointer mode register name: xm or xh. Returns the new offset in
+/* Decodes pointer mode register name: xm or xb. Returns the new offset in
 ** string, the register encoding (0-1) in enc. Returns 0 if there was no valid
 ** register at the offset. Skips white spaces before and after the reg. */
 static auint opcdec_xm(uint8 const* src, auint beg, auint* enc)
@@ -120,7 +120,7 @@ static auint opcdec_xm(uint8 const* src, auint beg, auint* enc)
  beg = strpr_nextnw(src, beg);
  if (src[beg] == (uint8)('x')){
   beg++;
-  if ( (src[beg] == ((uint8)('m'))) || (src[beg] == ((uint8)('h'))) ){
+  if ( (src[beg] == ((uint8)('m'))) || (src[beg] == ((uint8)('b'))) ){
    if (!strpr_issym(src[beg + 1U])){
     if (src[beg] == ((uint8)('m'))){ *enc = 0U; }
     else                           { *enc = 1U; }
@@ -133,8 +133,8 @@ static auint opcdec_xm(uint8 const* src, auint beg, auint* enc)
 
 
 
-/* Decodes pointer mode register part: xm0, xm1, xm2, xm3, xh0, xh1, xh2 or
-** xh3. Returns the new offset in string, the register encoding (0-7) in enc.
+/* Decodes pointer mode register part: xm0, xm1, xm2, xm3, xb0, xb1, xb2 or
+** xb3. Returns the new offset in string, the register encoding (0-7) in enc.
 ** Returns 0 if there was no valid register at the offset. Skips white spaces
 ** before and after the reg. */
 static auint opcdec_x4(uint8 const* src, auint beg, auint* enc)
@@ -142,7 +142,7 @@ static auint opcdec_x4(uint8 const* src, auint beg, auint* enc)
  beg = strpr_nextnw(src, beg);
  if (src[beg] == (uint8)('x')){
   beg++;
-  if ( (src[beg] == ((uint8)('m'))) || (src[beg] == ((uint8)('h'))) ){
+  if ( (src[beg] == ((uint8)('m'))) || (src[beg] == ((uint8)('b'))) ){
    if (src[beg] == ((uint8)('m'))){ *enc = 0U; }
    else                           { *enc = 4U; }
    beg++;
@@ -318,15 +318,15 @@ static auint opcdec_addrx(symtab_t* stb, auint* opv)
  beg = strpr_nextnw(src, 0U);
  *opv = 0U;
 
- /* XM or XH register */
+ /* XM or XB register */
  i = opcdec_xm(src, beg, &e);
- if (i != 0U){                 /* XM or XH found */
+ if (i != 0U){                 /* XM or XB found */
   *opv = OPCDEC_X_XM | e;
  }else{
 
-  /* Parts of XM or XH register */
+  /* Parts of XM or XB register */
   i = opcdec_x4(src, beg, &e);
-  if (i != 0U){                /* Parts of XM or XH found */
+  if (i != 0U){                /* Parts of XM or XB found */
    *opv = OPCDEC_X_XM0 | e;
   }else{
 

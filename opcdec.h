@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.03.03
+**  \date      2015.03.05
 */
 
 
@@ -106,8 +106,8 @@ typedef struct{
 /* Pointer specials. */
 #define OPCDEC_E_XM    0x0010U
 #define OPCDEC_X_XM    (0x0U | OPCDEC_E_XM)
-#define OPCDEC_E_XH    0x0020U
-#define OPCDEC_X_XH    (0x1U | OPCDEC_E_XM)
+#define OPCDEC_E_XB    0x0020U
+#define OPCDEC_X_XB    (0x1U | OPCDEC_E_XM)
 #define OPCDEC_E_XM0   0x0100U
 #define OPCDEC_X_XM0   (0x0U | OPCDEC_E_XM0)
 #define OPCDEC_E_XM1   0x0200U
@@ -116,14 +116,14 @@ typedef struct{
 #define OPCDEC_X_XM2   (0x2U | OPCDEC_E_XM2)
 #define OPCDEC_E_XM3   0x0800U
 #define OPCDEC_X_XM3   (0x3U | OPCDEC_E_XM3)
-#define OPCDEC_E_XH0   0x1000U
-#define OPCDEC_X_XH0   (0x4U | OPCDEC_E_XH0)
-#define OPCDEC_E_XH1   0x2000U
-#define OPCDEC_X_XH1   (0x5U | OPCDEC_E_XH1)
-#define OPCDEC_E_XH2   0x4000U
-#define OPCDEC_X_XH2   (0x6U | OPCDEC_E_XH2)
-#define OPCDEC_E_XH3   0x8000U
-#define OPCDEC_X_XH3   (0x7U | OPCDEC_E_XH3)
+#define OPCDEC_E_XB0   0x1000U
+#define OPCDEC_X_XB0   (0x4U | OPCDEC_E_XB0)
+#define OPCDEC_E_XB1   0x2000U
+#define OPCDEC_X_XB1   (0x5U | OPCDEC_E_XB1)
+#define OPCDEC_E_XB2   0x4000U
+#define OPCDEC_X_XB2   (0x6U | OPCDEC_E_XB2)
+#define OPCDEC_E_XB3   0x8000U
+#define OPCDEC_X_XB3   (0x7U | OPCDEC_E_XB3)
 
 
 

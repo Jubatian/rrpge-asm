@@ -238,6 +238,59 @@ us_fastmap_gethw	equ	0xE0CE
 us_fastmap_getyx	equ	0xE0D0
 us_fastmap_setdly	equ	0xE0D2
 us_fastmap_draw		equ	0xE0D4
+us_cr_new		equ	0xE0D6
+us_cr_setsi		equ	0xE0D8
+us_cr_getnc		equ	0xE0DA
+us_cw_new		equ	0xE0DC
+us_cw_setnc		equ	0xE0DE
+us_cw_setst		equ	0xE0E0
+us_cw_init		equ	0xE0E2
+us_cwr_new		equ	0xE0E4
+us_cwr_nextsi		equ	0xE0E6
+us_utf32f8		equ	0xE0E8
+us_utf8f32		equ	0xE0EA
+us_utf8len		equ	0xE0EC
+us_idfutf32		equ	0xE0EE
+us_cr_cbyte_new		equ	0xE0F0
+us_cr_cbyte_setsi	equ	0xE0F2
+us_cr_cbyte_getnc	equ	0xE0F4
+us_cr_pbyte_new		equ	0xE0F6
+us_cr_pbyte_setsb	equ	0xE0F8
+us_cr_pbyte_setsi	equ	0xE0FA
+us_cr_pbyte_getnc	equ	0xE0FC
+us_cr_cutf8_new		equ	0xE0FE
+us_cr_cutf8_setsi	equ	0xE100
+us_cr_cutf8_getnc	equ	0xE102
+us_cr_putf8_new		equ	0xE104
+us_cr_putf8_setsb	equ	0xE106
+us_cr_putf8_setsi	equ	0xE108
+us_cr_putf8_getnc	equ	0xE10A
+us_cwr_cbyte_new	equ	0xE10C
+us_cwr_cbyte_newz	equ	0xE10E
+us_cwr_cbyte_setnc	equ	0xE110
+us_cwr_cbyte_nextsi	equ	0xE112
+us_cwr_pbyte_new	equ	0xE114
+us_cwr_pbyte_newz	equ	0xE116
+us_cwr_pbyte_setnc	equ	0xE118
+us_cwr_pbyte_nextsi	equ	0xE11A
+us_cwr_cutf8_new	equ	0xE11C
+us_cwr_cutf8_newz	equ	0xE11E
+us_cwr_cutf8_setnc	equ	0xE120
+us_cwr_cutf8_nextsi	equ	0xE122
+us_cwr_putf8_new	equ	0xE124
+us_cwr_putf8_newz	equ	0xE126
+us_cwr_putf8_setnc	equ	0xE128
+us_cwr_putf8_nextsi	equ	0xE12A
+us_cw_tile_new		equ	0xE12C
+us_cw_tile_setnc	equ	0xE12E
+us_cw_tile_setst	equ	0xE130
+us_cw_tile_init		equ	0xE132
+us_cw_tile_setxy	equ	0xE134
+us_ftile_new		equ	0xE136
+us_ftile_acc		equ	0xE138
+us_ftile_blit		equ	0xE13A
+us_ftile_gethw		equ	0xE13C
+
 
 ;
 ; User Library locations (pointers)
@@ -248,3 +301,7 @@ up_font_4i		equ	0xFAA4
 up_font_8		equ	0xFAAC
 up_font_8i		equ	0xFAB4
 up_dsurf		equ	0xFAC0
+up_ffutf_h		equ	0x001F
+up_ffutf_l		equ	0x8200
+up_uf437_h		equ	0x001F
+up_uf437_l		equ	0x8900
