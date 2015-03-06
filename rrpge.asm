@@ -290,17 +290,20 @@ us_ftile_new		equ	0xE136
 us_ftile_acc		equ	0xE138
 us_ftile_blit		equ	0xE13A
 us_ftile_gethw		equ	0xE13C
+us_ftile_setch		equ	0xE13E
 
 
 ;
 ; User Library locations (pointers)
 ;
 
-up_font_4		equ	0xFA9C
-up_font_4i		equ	0xFAA4
-up_font_8		equ	0xFAAC
-up_font_8i		equ	0xFAB4
-up_dsurf		equ	0xFAC0
+up_cr_utf8		equ	0xFD88
+up_cr_byte		equ	0xFD8C
+up_font_4		equ	0xFD9C
+up_font_4i		equ	0xFDA4
+up_font_8		equ	0xFDAC
+up_font_8i		equ	0xFDB4
+up_dsurf		equ	0xFDC0
 up_ffutf_h		equ	0x001F
 up_ffutf_l		equ	0x8200
 up_uf437_h		equ	0x001F
