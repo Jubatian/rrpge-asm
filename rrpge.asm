@@ -291,6 +291,10 @@ us_ftile_acc		equ	0xE138
 us_ftile_blit		equ	0xE13A
 us_ftile_gethw		equ	0xE13C
 us_ftile_setch		equ	0xE13E
+us_strcpynz		equ	0xE140
+us_strcpy		equ	0xE142
+us_printfnz		equ	0xE144
+us_printf		equ	0xE146
 
 
 ;
