@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.03.05
+**  \date      2015.03.10
 */
 
 
@@ -499,11 +499,11 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
  if (section_getsect(sec) != SECT_CODE){
   snprintf((char*)(&s[0]), 80U, "Probable code in non code section");
   fault_printat(FAULT_FAIL, &s[0], cst);
-  return 1U;
+  return 0U;
  }
 
  if (strpr_isend(src[beg])){
-  return 0U;             /* No content on this line */
+  return 1U;             /* No content on this line */
  }
 
  /* Encode opcodes */
