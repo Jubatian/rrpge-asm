@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.03.10
+**  \date      2015.03.13
 */
 
 
@@ -351,7 +351,7 @@ static auint opcdec_addrx(symtab_t* stb, auint* opv)
 
 
 /* Decodes operand and parameter list. Simply goes through the remaining
-** length of the source line, taking up to 2 operands and 16 function
+** length of the source line, taking up to 8 operands and 16 function
 ** parameters, adding those to the opcode descriptor structure. May emit
 ** fault. Returns nonzero (TRUE) on success. */
 static auint opcdec_oplist(symtab_t* stb, opcdec_ds_t* ods)
@@ -364,7 +364,7 @@ static auint opcdec_oplist(symtab_t* stb, opcdec_ds_t* ods)
 
  beg = strpr_nextnw(src, 0U);
 
- /* Decode up to two operands */
+ /* Decode up to 8 operands */
 
  i = 0U;
  if ( (!strpr_isend(src[beg])) &&
@@ -377,7 +377,7 @@ static auint opcdec_oplist(symtab_t* stb, opcdec_ds_t* ods)
    if ( (strpr_isend(src[beg])) ||
         (src[beg] == (uint8)('{')) ){ break; }
    if (src[beg] != (uint8)(',')){ goto fault_cma; }
-   if (i >= 2U){                  goto fault_opm; }
+   if (i >= 8U){                  goto fault_opm; }
    beg = strpr_nextnw(src, beg + 1U);
    compst_setcoffrel(cst, beg);
   }
@@ -591,6 +591,14 @@ auint opcdec_proc(symtab_t* stb, opcdec_ds_t* ods)
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("or" ))){
 
   r = opcdec_dec(stb, ods, 0x3000U | OPCDEC_I_R);
+
+ }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("pop"))){
+
+  r = opcdec_dec(stb, ods, OPCDEC_I_POP);
+
+ }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("psh"))){
+
+  r = opcdec_dec(stb, ods, OPCDEC_I_PSH);
 
  }else if (compst_issymequ(NULL, &(src[beg]), (uint8 const*)("rfn"))){
 

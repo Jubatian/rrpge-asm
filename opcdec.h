@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.03.05
+**  \date      2015.03.13
 */
 
 
@@ -21,7 +21,7 @@
 /* Opcode descriptor structure */
 typedef struct{
  auint id;          /* Opcode identifier */
- auint op[2];       /* Operands (destination, source) */
+ auint op[8];       /* Operands (destination, source, push-pop extra) */
  auint opc;         /* Count of operands */
  auint pr[16];      /* Parameters (function calls) */
  auint prc;         /* Count of parameters */
@@ -76,6 +76,10 @@ typedef struct{
 #define OPCDEC_I_XUG   12U
 /* JNZ */
 #define OPCDEC_I_JNZ   13U
+/* PSH */
+#define OPCDEC_I_PSH   14U
+/* POP */
+#define OPCDEC_I_POP   15U
 
 
 /* Operand and parameter formatting */

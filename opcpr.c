@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.03.05
+**  \date      2015.03.13
 */
 
 
@@ -783,6 +783,86 @@ static auint opcpr_ixug(symtab_t* stb, opcdec_ds_t* ods)
 
 
 
+/* Common encoder for push and pop: msk is the opcode mask (the low 6 bits
+** have to be clear so the registers can be added). */
+static auint opcpr_ipp(symtab_t* stb, opcdec_ds_t* ods, auint msk)
+{
+ compst_t*    cst = symtab_getcompst(stb);
+ auint  reg;
+ auint  i;
+ auint  t;
+
+ /* Check count of parameters and operands */
+
+ if (opcpr_nofunc(stb, ods) == 0U){ return 0U; }
+ if (opcpr_nocy(stb, ods) == 0U){ return 0U; }
+
+ /* Collect parameter registers */
+
+ reg = 0U;
+
+ if (ods->opc == 0U){
+  fault_printat(FAULT_FAIL, (uint8 const*)("Needs at least one register parameter"), cst);
+  return 0U;
+ }
+
+ for (i = 0U; i < ods->opc; i++){
+  t = (ods->op[i] >> OPCDEC_S_ADR) & 0x3FU;
+  if ((t & 0x38U) == 0x30U){    /* Normal register */
+   switch (t & 0x7U){
+    case 0U: reg |= 0x20U; break;
+    case 1U: reg |= 0x10U; break;
+    case 3U: reg |= 0x04U; break;
+    case 4U: reg |= 0x02U; break;
+    case 5U: reg |= 0x01U; break;
+    case 6U: reg |= 0x08U; break;
+    default:
+     fault_printat(FAULT_FAIL, (uint8 const*)("Only registers A, B, D, X0, X1, X2, XM and XB can be used"), cst);
+     return 0U;
+   }
+  }else if (ods->op[i] == OPCDEC_X_XM){
+   reg |= 0x40U;
+  }else if (ods->op[i] == OPCDEC_X_XB){
+   reg |= 0x80U;
+  }else{
+   fault_printat(FAULT_FAIL, (uint8 const*)("Only registers A, B, D, X0, X1, X2, XM and XB can be used"), cst);
+   return 0U;
+  }
+ }
+
+ /* Check combinations */
+
+ if ((reg & 0xC0U) != 0U){
+  if (reg != 0xFFU){
+   fault_printat(FAULT_FAIL, (uint8 const*)("XM and XB must be used in an all register operation"), cst);
+   return 0U;
+  }
+  reg = 0U;
+ }
+
+ /* Write instruction */
+
+ return opcpr_pushw(stb, msk | reg);
+}
+
+
+
+/* Encode PSH. May produce fault. Returns nonzero (TRUE) on success. */
+static auint opcpr_ipsh(symtab_t* stb, opcdec_ds_t* ods)
+{
+ return opcpr_ipp(stb, ods, 0x80C0U);
+}
+
+
+
+/* Encode POP. May produce fault. Returns nonzero (TRUE) on success. */
+static auint opcpr_ipop(symtab_t* stb, opcdec_ds_t* ods)
+{
+ return opcpr_ipp(stb, ods, 0x82C0U);
+}
+
+
+
 /* Attempts to process an opcode beginning at the current position in the
 ** source line of the compile state. It uses the offset in the current section
 ** to write into the passed code memory block, and increments the offset
@@ -820,6 +900,8 @@ auint opcpr_proc(symtab_t* stb)
    case OPCDEC_I_XNE: r = opcpr_ixne(stb, &ods); break;
    case OPCDEC_I_XUG: r = opcpr_ixug(stb, &ods); break;
    case OPCDEC_I_JNZ: r = opcpr_ijnz(stb, &ods); break;
+   case OPCDEC_I_PSH: r = opcpr_ipsh(stb, &ods); break;
+   case OPCDEC_I_POP: r = opcpr_ipop(stb, &ods); break;
    default: break;
   }
  }
