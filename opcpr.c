@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.03.13
+**  \date      2015.03.17
 */
 
 
@@ -406,8 +406,8 @@ static auint opcpr_imov(symtab_t* stb, opcdec_ds_t* ods)
   if ( (((adr >> OPCDEC_S_ADR) & 0x38U) == 0x20U) &&   /* Immediate: specials here */
        ((adr & OPCDEC_O_SYM) == 0U) ){                 /* Only if not symbol (so value present) */
    v = adr & 0xFFFFU;
-   if (v < 128U){                  /* MOV SP, imm7 can be encoded */
-    section_setw(sec, off, 0x8380U | v);
+   if (((v & 0x10U) != 0U) && (v < 32U)){              /* MOV SP, imx can be encoded */
+    section_setw(sec, off, 0x8380U | (v << 3));
     return 1U;
    }
   }
@@ -778,7 +778,7 @@ static auint opcpr_ixne(symtab_t* stb, opcdec_ds_t* ods)
 /* Encode XUG. May produce fault. Returns nonzero (TRUE) on success. */
 static auint opcpr_ixug(symtab_t* stb, opcdec_ds_t* ods)
 {
- return opcpr_ixxx(stb, ods, 0xBC00U, 0x8100U, 1U);
+ return opcpr_ixxx(stb, ods, 0xBC00U, 0x80C0U, 1U);
 }
 
 
@@ -812,18 +812,18 @@ static auint opcpr_ipp(symtab_t* stb, opcdec_ds_t* ods, auint msk)
    switch (t & 0x7U){
     case 0U: reg |= 0x20U; break;
     case 1U: reg |= 0x10U; break;
-    case 3U: reg |= 0x04U; break;
-    case 4U: reg |= 0x02U; break;
-    case 5U: reg |= 0x01U; break;
-    case 6U: reg |= 0x08U; break;
+    case 3U: reg |= 0x08U; break;
+    case 4U: reg |= 0x04U; break;
+    case 5U: reg |= 0x02U; break;
+    case 6U: reg |= 0x01U; break;
     default:
      fault_printat(FAULT_FAIL, (uint8 const*)("Only registers A, B, D, X0, X1, X2, XM and XB can be used"), cst);
      return 0U;
    }
   }else if (ods->op[i] == OPCDEC_X_XM){
-   reg |= 0x40U;
-  }else if (ods->op[i] == OPCDEC_X_XB){
    reg |= 0x80U;
+  }else if (ods->op[i] == OPCDEC_X_XB){
+   reg |= 0x40U;
   }else{
    fault_printat(FAULT_FAIL, (uint8 const*)("Only registers A, B, D, X0, X1, X2, XM and XB can be used"), cst);
    return 0U;
@@ -832,12 +832,13 @@ static auint opcpr_ipp(symtab_t* stb, opcdec_ds_t* ods, auint msk)
 
  /* Check combinations */
 
- if ((reg & 0xC0U) != 0U){
-  if (reg != 0xFFU){
-   fault_printat(FAULT_FAIL, (uint8 const*)("XM and XB must be used in an all register operation"), cst);
-   return 0U;
-  }
-  reg = 0U;
+ if ((reg & 0xC0U) == 0x40U){
+  fault_printat(FAULT_FAIL, (uint8 const*)("XB can only be used together with XM"), cst);
+  return 0U;
+ }
+ if ((reg & 0x87U) == 0x80U){
+  fault_printat(FAULT_FAIL, (uint8 const*)("XM can not be used without X0, X1 or X2"), cst);
+  return 0U;
  }
 
  /* Write instruction */
@@ -850,7 +851,7 @@ static auint opcpr_ipp(symtab_t* stb, opcdec_ds_t* ods, auint msk)
 /* Encode PSH. May produce fault. Returns nonzero (TRUE) on success. */
 static auint opcpr_ipsh(symtab_t* stb, opcdec_ds_t* ods)
 {
- return opcpr_ipp(stb, ods, 0x80C0U);
+ return opcpr_ipp(stb, ods, 0x8100U);
 }
 
 
@@ -858,7 +859,7 @@ static auint opcpr_ipsh(symtab_t* stb, opcdec_ds_t* ods)
 /* Encode POP. May produce fault. Returns nonzero (TRUE) on success. */
 static auint opcpr_ipop(symtab_t* stb, opcdec_ds_t* ods)
 {
- return opcpr_ipp(stb, ods, 0x82C0U);
+ return opcpr_ipp(stb, ods, 0x8300U);
 }
 
 
