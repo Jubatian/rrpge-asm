@@ -2,11 +2,11 @@
 **  \file
 **  \brief     RRPGE simple assembler main file
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \license   2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.29
+**  \date      2015.07.12
 **
 **
 ** Short usage summary:
@@ -33,7 +33,7 @@ static char const* main_appname = "RRPGE Assembler. Version: " ASSEMBLER_VERSION
 
 /* Other elements */
 static char const* main_appauth = "By: Sandor Zsuga (Jubatian)\n";
-static char const* main_copyrig = "Copyright: 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public\nLicense) extended as RRPGEvt (temporary version of the RRPGE License):\nsee LICENSE.GPLv3 and LICENSE.RRPGEvt in the project root.\n";
+static char const* main_copyrig = "License: 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public\nLicense) extended as RRPGEvt (temporary version of the RRPGE License):\nsee LICENSE.GPLv3 and LICENSE.RRPGEvt in the project root.\n";
 
 
 
