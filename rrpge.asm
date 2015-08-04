@@ -48,14 +48,12 @@ P_GFIFO_LS		equ	0x000C	; Graphics FIFO location & size
 P_GFIFO_STAT		equ	0x000D	; Graphics FIFO status
 P_GFIFO_ADDR		equ	0x000E	; Graphics FIFO address
 P_GFIFO_DATA		equ	0x000F	; Graphics FIFO data
-P_GDG_MCK0		equ	0x0010	; GDG Mask / Colorkey definition 0
-P_GDG_MCK1		equ	0x0011	; GDG Mask / Colorkey definition 1
-P_GDG_MCK2		equ	0x0012	; GDG Mask / Colorkey definition 2
-P_GDG_MCK3		equ	0x0013	; GDG Mask / Colorkey definition 3
+P_GDG_DSCAN		equ	0x0012	; GDG Double Scan split
+P_GDG_DLCLR		equ	0x0013	; GDG Display List Clear controls
 P_GDG_SMRA		equ	0x0014	; GDG Shift mode region A
 P_GDG_SMRB		equ	0x0015	; GDG Shift mode region B
-P_GDG_DLCLR		equ	0x0016	; GDG Display List Clear controls
-P_GDG_DLDEF		equ	0x0017	; GDG Display List Definition & Process flags
+P_GDG_DLDEF		equ	0x0016	; GDG Display List Definition
+P_GDG_STAT		equ	0x0017	; GDG Status flags
 P_GDG_SA0		equ	0x0018	; GDG Source definition A0
 P_GDG_SA1		equ	0x0019	; GDG Source definition A1
 P_GDG_SA2		equ	0x001A	; GDG Source definition A2
@@ -103,7 +101,6 @@ kc_sfi_save		equ	0x02
 kc_sfi_next		equ	0x03
 kc_sfi_move		equ	0x04
 kc_vid_setpal		equ	0x08
-kc_vid_mode		equ	0x09
 kc_vid_setst3d		equ	0x0A
 kc_inp_getprops		equ	0x10
 kc_inp_dropdev		equ	0x11
@@ -163,7 +160,6 @@ us_dlist_addxy		equ	0xE038
 us_dlist_addbg		equ	0xE03A
 us_dlist_addlist	equ	0xE03C
 us_dlist_clear		equ	0xE03E
-us_dloff_clip		equ	0xE040
 us_dbuf_init		equ	0xE042
 us_dlist_sb_setptr	equ	0xE044
 us_dlist_sb_add		equ	0xE046
