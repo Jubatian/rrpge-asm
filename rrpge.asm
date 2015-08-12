@@ -48,8 +48,8 @@ P_GFIFO_LS		equ	0x000C	; Graphics FIFO location & size
 P_GFIFO_STAT		equ	0x000D	; Graphics FIFO status
 P_GFIFO_ADDR		equ	0x000E	; Graphics FIFO address
 P_GFIFO_DATA		equ	0x000F	; Graphics FIFO data
-P_GDG_LHPA		equ	0x0010	; GDG Low half-palette select A
-P_GDG_LHPB		equ	0x0011	; GDG Low half-palette select B
+P_GDG_KEYA		equ	0x0010	; GDG Colorkey values A
+P_GDG_KEYB		equ	0x0011	; GDG Colorkey values B
 P_GDG_DSCAN		equ	0x0012	; GDG Double Scan split
 P_GDG_DLCLR		equ	0x0013	; GDG Display List Clear controls
 P_GDG_SMRA		equ	0x0014	; GDG Shift mode region A
@@ -303,8 +303,6 @@ up_cr_utf8		equ	0xFD88
 up_cr_byte		equ	0xFD8C
 up_font_4		equ	0xFD9C
 up_font_4i		equ	0xFDA4
-up_font_8		equ	0xFDAC
-up_font_8i		equ	0xFDB4
 up_dsurf		equ	0xFDC0
 up_ffutf_h		equ	0x001F
 up_ffutf_l		equ	0x8200
