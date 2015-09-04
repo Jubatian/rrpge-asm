@@ -8,6 +8,7 @@
 ;           root.
 ;
 
+
 ;
 ; Memory pointer modes
 ;
@@ -27,6 +28,7 @@ PTR8W			equ	0b1100
 PTR4W			equ	0b1101
 PTR2W			equ	0b1110
 PTR1W			equ	0b1111
+
 
 ;
 ; User Peripheral Area
@@ -93,6 +95,7 @@ P3_DS			equ	0x003C	; Pointer 3 Data unit size
 P3_RW_NI		equ	0x003E	; Pointer 3 Read / Write with no post-increment
 P3_RW			equ	0x003F	; Pointer 3 Read / Write
 
+
 ;
 ; Supervisor calls
 ;
@@ -104,15 +107,11 @@ kc_sfi_next		equ	0x03
 kc_sfi_move		equ	0x04
 kc_vid_setpal		equ	0x08
 kc_vid_setst3d		equ	0x0A
-kc_inp_getprops		equ	0x10
+kc_inp_reqdev		equ	0x10
 kc_inp_dropdev		equ	0x11
-kc_inp_getdidesc	equ	0x12
-kc_inp_getaidesc	equ	0x13
-kc_inp_getname		equ	0x14
-kc_inp_getdi		equ	0x16
-kc_inp_getai		equ	0x17
-kc_inp_popchar		equ	0x18
-kc_inp_checkarea	equ	0x19
+kc_inp_pop		equ	0x12
+kc_inp_peek		equ	0x13
+kc_inp_flush		equ	0x14
 kc_dly_delay		equ	0x1F
 kc_usr_getlocal		equ	0x20
 kc_usr_getutf		equ	0x21
@@ -126,6 +125,7 @@ kc_net_setavail		equ	0x2B
 kc_net_getavail		equ	0x2C
 kc_tsk_query		equ	0x2E
 kc_tsk_discard		equ	0x2F
+
 
 ;
 ; User Library functions
@@ -308,3 +308,15 @@ up_ffutf_h		equ	0x001F
 up_ffutf_l		equ	0x8200
 up_uf437_h		equ	0x001F
 up_uf437_l		equ	0x8900
+
+
+;
+; Input device types
+;
+
+DEV_POINT		equ	0
+DEV_TOUCH		equ	1
+DEV_PAD			equ	2
+DEV_STICK		equ	3
+DEV_TEXT		equ	4
+DEV_KEYB		equ	5
