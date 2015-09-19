@@ -2,11 +2,11 @@
 **  \file
 **  \brief     Compilation state
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.22
+**  \date      2015.09.19
 */
 
 
@@ -40,7 +40,7 @@ compst_t* compst_getobj(void)
 /* Inits a compilation state object */
 void  compst_init(compst_t* hnd)
 {
- memset(hnd, 0U, sizeof(hnd));         /* This is almost all fine for it */
+ memset(hnd, 0U, sizeof(hnd[0]));
 }
 
 

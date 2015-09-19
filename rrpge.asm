@@ -196,7 +196,6 @@ us_smux_addlist		equ	0xE07E
 us_sin			equ	0xE080
 us_cos			equ	0xE082
 us_sincos		equ	0xE084
-us_tfreq		equ	0xE086
 us_mul32		equ	0xE088
 us_div32		equ	0xE08A
 us_rec16		equ	0xE08C
@@ -296,18 +295,135 @@ us_printf		equ	0xE146
 
 
 ;
-; User Library locations (pointers)
+; Built-in data & User Library locations (pointers)
 ;
 
-up_cr_utf8		equ	0xFD88
-up_cr_byte		equ	0xFD8C
-up_font_4		equ	0xFD9C
-up_font_4i		equ	0xFDA4
-up_dsurf		equ	0xFDC0
-up_ffutf_h		equ	0x001F
-up_ffutf_l		equ	0x8200
-up_uf437_h		equ	0x001F
-up_uf437_l		equ	0x8900
+up_sine			equ	0xFE00	; Large sine table (512 elements, 2.14 fixed point signed)
+up_palette		equ	0xFAC0	; RRPGE Incremental palette (64 colors)
+up_mlogt		equ	0xFAB4	; Musical logarithmic table (12 entries)
+
+up32h_smp		equ	0x000F	; Bank of samples in PRAM
+up32l_smp_sqr		equ	0xFC00	; Square wave
+up32l_smp_sine		equ	0xFC80	; Sine wave
+up32l_smp_tri		equ	0xFD00	; Triangle wave
+up32l_smp_spike		equ	0xFD80	; Spiked wave
+up32l_smp_sawi		equ	0xFE00	; Incremental sawtooth wave
+up32l_smp_sawd		equ	0xFE80	; Decremental sawtooth wave
+up32l_smp_nois1		equ	0xFF00	; Noise 1 waveform
+up32l_smp_nois2		equ	0xFF80	; Noise 2 waveform
+up32l_smp_user0		equ	0xF800	; User sample
+up32l_smp_user1		equ	0xF880
+up32l_smp_user2		equ	0xF900
+up32l_smp_user3		equ	0xF980
+up32l_smp_user4		equ	0xFA00
+up32l_smp_user5		equ	0xFA80
+up32l_smp_user6		equ	0xFB00
+up32l_smp_user7		equ	0xFB80
+
+up16h_smp		equ	0x001F	; High part of sample address, word offset
+up16l_smp_sqr		equ	0xF800
+up16l_smp_sine		equ	0xF900
+up16l_smp_tri		equ	0xFA00
+up16l_smp_spike		equ	0xFB00
+up16l_smp_sawi		equ	0xFC00
+up16l_smp_sawd		equ	0xFD00
+up16l_smp_nois1		equ	0xFE00
+up16l_smp_nois2		equ	0xFF00
+up16l_smp_user0		equ	0xF000
+up16l_smp_user1		equ	0xF100
+up16l_smp_user2		equ	0xF200
+up16l_smp_user3		equ	0xF300
+up16l_smp_user4		equ	0xF400
+up16l_smp_user5		equ	0xF500
+up16l_smp_user6		equ	0xF600
+up16l_smp_user7		equ	0xF700
+
+up1h_smp		equ	0x01FF	; High part of sample address, bit offset
+up1l_smp_sqr		equ	0x8000
+up1l_smp_sine		equ	0x9000
+up1l_smp_tri		equ	0xA000
+up1l_smp_spike		equ	0xB000
+up1l_smp_sawi		equ	0xC000
+up1l_smp_sawd		equ	0xD000
+up1l_smp_nois1		equ	0xE000
+up1l_smp_nois2		equ	0xF000
+up1l_smp_user0		equ	0xF000
+up1l_smp_user1		equ	0x1000
+up1l_smp_user2		equ	0x2000
+up1l_smp_user3		equ	0x3000
+up1l_smp_user4		equ	0x4000
+up1l_smp_user5		equ	0x5000
+up1l_smp_user6		equ	0x6000
+up1l_smp_user7		equ	0x7000
+
+up32h_dlist0		equ	0x000F	; Display list (12800 x 32 bits)
+up32l_dlist0		equ	0x8000
+up16h_dlist0		equ	0x001F
+up16l_dlist0		equ	0x0000
+up1h_dlist0		equ	0x01F0
+up1l_dlist0		equ	0x0000
+
+up32h_dlist1		equ	0x000F	; Display list (12800 x 32 bits)
+up32l_dlist1		equ	0x4000
+up16h_dlist1		equ	0x001E
+up16l_dlist1		equ	0x8000
+up1h_dlist1		equ	0x01E8
+up1l_dlist1		equ	0x0000
+
+up32h_au_lf		equ	0x000F	; Audio buffer, left / mono (4096 x 16 bit samples)
+up32l_au_lf		equ	0xB800
+up16h_au_lf		equ	0x001F
+up16l_au_lf		equ	0x7000
+up1h_au_lf		equ	0x01F7
+up1l_au_lf		equ	0x0000
+
+up32h_au_rt		equ	0x000F	; Audio buffer, right (4096 x 16 bit samples)
+up32l_au_rt		equ	0x7800
+up16h_au_rt		equ	0x001E
+up16l_au_rt		equ	0xF000
+up1h_au_rt		equ	0x01EF
+up1l_au_rt		equ	0x0000
+
+up32h_au_mono		equ	up32h_au_lf
+up32l_au_mono		equ	up32l_au_lf
+up16h_au_mono		equ	up16h_au_lf
+up16l_au_mono		equ	up16l_au_lf
+up1h_au_mono		equ	up1h_au_lf
+up1l_au_mono		equ	up1l_au_lf
+
+up_cr_utf8		equ	0xFD88	; UTF-8 CPU RAM character reader
+up_cr_byte		equ	0xFD8C	; Byte CPU RAM character reader
+up_font			equ	0xFD9C	; Font tileset for the User Library font
+up_fonti		equ	0xFDA4	; Font tileset for the Inverted User Library font
+up_dsurf		equ	0xFDC0	; Destination surface object
+
+up32h_ffutf		equ	0x000F	; UTF to User Library font transformation table
+up32l_ffutf		equ	0xE600
+up16h_ffutf		equ	0x001F
+up16l_ffutf		equ	0xCC00
+up1h_ffutf		equ	0x01FC
+up1l_ffutf		equ	0xC000
+
+up32h_uf437		equ	0x000F	; CP-437 to UTF transformation table
+up32l_uf437		equ	0xE980
+up16h_uf437		equ	0x001F
+up16l_uf437		equ	0xD300
+up1h_uf437		equ	0x01FD
+up1l_uf437		equ	0x3000
+
+
+;
+; Display list definitions for each sizes for the default display lists
+;
+
+DLDEF_0_4		equ	0xF800
+DLDEF_0_8		equ	0xF801
+DLDEF_0_16		equ	0xF802
+DLDEF_0_32		equ	0xF803
+DLDEF_1_4		equ	0xF400
+DLDEF_1_8		equ	0xF401
+DLDEF_1_16		equ	0xF402
+DLDEF_1_32		equ	0xF403
 
 
 ;
