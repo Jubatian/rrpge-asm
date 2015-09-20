@@ -162,6 +162,7 @@ us_dlist_addxy		equ	0xE038
 us_dlist_addbg		equ	0xE03A
 us_dlist_addlist	equ	0xE03C
 us_dlist_clear		equ	0xE03E
+us_dlist_setbounds	equ	0xE040
 us_dbuf_init		equ	0xE042
 us_dlist_sb_setptr	equ	0xE044
 us_dlist_sb_add		equ	0xE046
