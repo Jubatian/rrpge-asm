@@ -38,7 +38,7 @@ incstk_t* incstk_getobj(void)
 /* Inits an include stack object as empty. */
 void  incstk_init(incstk_t* hnd)
 {
- memset(hnd, 0U, sizeof(hnd));
+ memset(hnd, 0U, sizeof(hnd[0]));
 }
 
 
